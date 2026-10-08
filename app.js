@@ -91,8 +91,6 @@
 
     examGrid: $('#exam-grid'),
 
-    btnQuizBack: $('#btn-quiz-back'),
-    quizModeTag: $('#quiz-mode-tag'),
     quizTitle: $('#quiz-title'),
     quizCounter: $('#quiz-counter'),
     progressFill: $('#progress-fill'),
@@ -715,8 +713,6 @@
     state.reviewMode = null;
 
     dom.quizTitle.textContent = `${newMock.title} • 50 câu`;
-    dom.quizModeTag.textContent = `Thi thử • ${sub.code}`;
-    dom.quizModeTag.className = 'quiz-mode-tag visible';
 
     showView('quiz');
     renderQuestion();
@@ -760,8 +756,6 @@
     state.reviewMode = 'wrong';
 
     dom.quizTitle.textContent = `${mock.title} — Học lại ${wrongQuestions.length} câu sai`;
-    dom.quizModeTag.textContent = `Học câu sai`;
-    dom.quizModeTag.className = 'quiz-mode-tag visible';
 
     showView('quiz');
     renderQuestion();
@@ -793,8 +787,6 @@
     }
 
     dom.quizTitle.textContent = `${mock.title} • 50 câu`;
-    dom.quizModeTag.textContent = `Thi thử • ${sub.code}`;
-    dom.quizModeTag.className = 'quiz-mode-tag visible';
 
     showView('quiz');
     renderQuestion();
@@ -872,14 +864,11 @@
     const sub = getSubConfig();
     let title = `${sub.code} — Bộ đề ${examNum}`;
     if (mode === 'wrong') {
-      dom.quizModeTag.textContent = `Học lại ${questions.length} câu sai`;
-      dom.quizModeTag.className = 'quiz-mode-tag visible';
+      title += ` (Học lại ${questions.length} câu sai)`;
     } else if (mode === 'correct') {
-      dom.quizModeTag.textContent = `Ôn lại ${questions.length} câu đúng`;
-      dom.quizModeTag.className = 'quiz-mode-tag visible';
+      title += ` (Ôn lại ${questions.length} câu đúng)`;
     } else {
-      dom.quizModeTag.textContent = `${questions.length} câu hỏi`;
-      dom.quizModeTag.className = 'quiz-mode-tag visible';
+      title += ` • ${questions.length} câu`;
     }
 
     dom.quizTitle.textContent = title;
@@ -1368,10 +1357,7 @@
       }
     });
 
-    // Quiz nav back button
-    if (dom.btnQuizBack) {
-      dom.btnQuizBack.addEventListener('click', goToDashboard);
-    }
+
 
     // Logo click -> Subjects or Dashboard
     dom.logoHome.addEventListener('click', () => {
@@ -1417,8 +1403,6 @@
       state.reviewMode = 'wrong';
 
       dom.quizTitle.textContent = `Học lại ${wrongQuestions.length} câu sai`;
-      dom.quizModeTag.textContent = `Học câu sai`;
-      dom.quizModeTag.className = 'quiz-mode-tag visible';
 
       showView('quiz');
       renderQuestion();
@@ -1441,8 +1425,6 @@
       state.reviewMode = 'correct';
 
       dom.quizTitle.textContent = `Ôn lại ${correctQuestions.length} câu đúng`;
-      dom.quizModeTag.textContent = `Ôn câu đúng`;
-      dom.quizModeTag.className = 'quiz-mode-tag visible';
 
       showView('quiz');
       renderQuestion();
