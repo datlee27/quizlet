@@ -39,7 +39,9 @@
   let state = {
     currentSubject: null,    // null | 'MLN111' | 'MLN122'
     currentView: 'subjects', // 'subjects' | 'home' | 'quiz' | 'result'
+    activeTab: 'exams',       // 'exams' | 'mock'
     currentExam: null,       // number (1-12) or 'MOCK'
+    currentMockId: null,     // string id of current mock exam
     isMockExam: false,
     currentIndex: 0,
     quizQuestions: [],
@@ -76,11 +78,18 @@
     dashboardSubjectName: $('#dashboard-subject-name'),
     dashboardSubjectStats: $('#dashboard-subject-stats'),
 
-    btnMockStart: $('#btn-mock-start'),
-    mockExamHistory: $('#mock-exam-history'),
-    mockExamSubactions: $('#mock-exam-subactions'),
+    tabBtnExams: $('#tab-btn-exams'),
+    tabBtnMock: $('#tab-btn-mock'),
+    tabExamCount: $('#tab-exam-count'),
+    tabMockCount: $('#tab-mock-count'),
+    tabContentExams: $('#tab-content-exams'),
+    tabContentMock: $('#tab-content-mock'),
 
-    examListCount: $('#exam-list-count'),
+    btnMockStart: $('#btn-mock-start'),
+    mockHistoryHeader: $('#mock-history-header'),
+    mockHistoryCount: $('#mock-history-count'),
+    mockHistoryGrid: $('#mock-history-grid'),
+
     examGrid: $('#exam-grid'),
 
     btnQuizBack: $('#btn-quiz-back'),
@@ -116,6 +125,7 @@
     btnReviewCorrectText: $('#btn-review-correct-text'),
     btnRestart: $('#btn-restart'),
     btnRestartText: $('#btn-restart-text'),
+    btnNewMock: $('#btn-new-mock'),
     btnResultHome: $('#btn-result-home'),
     reviewList: $('#review-list'),
   };
@@ -200,20 +210,61 @@
     updateSubjectProgressCards();
   }
 
-  // Mock Exam Persistence
-  function loadMockExamProgress(subCode = state.currentSubject) {
+  // Mock Exam Persistence (Array of mock tests per subject)
+  function loadMockExams(subCode = state.currentSubject) {
     const sub = SUBJECTS[subCode];
-    if (!sub) return null;
+    if (!sub) return [];
     try {
-      const data = localStorage.getItem(sub.mockStorageKey);
-      return data ? JSON.parse(data) : null;
+      const raw = localStorage.getItem(sub.mockStorageKey);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+      // Backward compatibility with single-object schema
+      if (parsed && parsed.questions && parsed.questions.length > 0) {
+        const legacyMock = {
+          id: 'mock_legacy_' + (parsed.updatedAt || Date.now()),
+          examNumber: 1,
+          title: 'Đề thi thử #1',
+          createdAt: parsed.updatedAt || Date.now(),
+          updatedAt: parsed.updatedAt || Date.now(),
+          questions: parsed.questions,
+          answers: parsed.answers || {},
+          lastScore: parsed.lastScore !== undefined ? parsed.lastScore : 0,
+          total: parsed.total || parsed.questions.length,
+          isCompleted: !!parsed.isCompleted,
+        };
+        const migrated = [legacyMock];
+        localStorage.setItem(sub.mockStorageKey, JSON.stringify(migrated));
+        return migrated;
+      }
+      return [];
     } catch {
-      return null;
+      return [];
     }
+  }
+
+  function saveMockExams(mocks, subCode = state.currentSubject) {
+    const sub = SUBJECTS[subCode];
+    if (!sub) return;
+    try {
+      localStorage.setItem(sub.mockStorageKey, JSON.stringify(mocks));
+    } catch (e) {
+      console.error('Failed to save mock exams:', e);
+    }
+  }
+
+  function getMockExamById(mockId, subCode = state.currentSubject) {
+    const mocks = loadMockExams(subCode);
+    return mocks.find(m => m.id === mockId) || null;
   }
 
   function saveMockExamResult(answers, isCompleted = false) {
     const sub = getSubConfig();
+    const mocks = loadMockExams(sub.code);
+    const mockId = state.currentMockId;
+
     let correctCount = 0;
     Object.keys(answers).forEach((qid) => {
       if (answers[qid] && answers[qid].correct) {
@@ -221,17 +272,44 @@
       }
     });
 
-    const mockData = {
-      questions: state.quizQuestions,
-      answers: answers,
-      lastScore: correctCount,
-      total: state.quizQuestions.length,
-      isCompleted: isCompleted,
-      updatedAt: Date.now(),
-    };
+    const existingIdx = mocks.findIndex(m => m.id === mockId);
+    if (existingIdx >= 0) {
+      mocks[existingIdx].answers = answers;
+      mocks[existingIdx].lastScore = correctCount;
+      mocks[existingIdx].total = state.quizQuestions.length;
+      mocks[existingIdx].updatedAt = Date.now();
+      if (isCompleted) {
+        mocks[existingIdx].isCompleted = true;
+      }
+    } else {
+      const nextNum = mocks.length + 1;
+      const newMock = {
+        id: mockId || ('mock_' + Date.now()),
+        examNumber: nextNum,
+        title: `Đề thi thử #${nextNum}`,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        questions: state.quizQuestions,
+        answers: answers,
+        lastScore: correctCount,
+        total: state.quizQuestions.length,
+        isCompleted: isCompleted,
+      };
+      state.currentMockId = newMock.id;
+      mocks.unshift(newMock);
+    }
 
-    localStorage.setItem(sub.mockStorageKey, JSON.stringify(mockData));
-    updateMockExamCard();
+    saveMockExams(mocks, sub.code);
+  }
+
+  function formatDate(timestamp) {
+    if (!timestamp) return '';
+    const d = new Date(timestamp);
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return `${hours}:${mins} ${day}/${month}`;
   }
 
   // ---- Utility ----
@@ -301,17 +379,30 @@
         saveExamResult(state.currentExam, state.answers, false);
       }
     }
+    const wasMock = state.isMockExam;
     state.currentExam = null;
     state.isMockExam = false;
     state.reviewMode = null;
+    if (wasMock) {
+      state.activeTab = 'mock';
+    }
     showView('home');
     renderSubjectDashboard();
+  }
+
+  function switchTab(tabName) {
+    state.activeTab = tabName;
+    if (dom.tabBtnExams) dom.tabBtnExams.classList.toggle('active', tabName === 'exams');
+    if (dom.tabBtnMock) dom.tabBtnMock.classList.toggle('active', tabName === 'mock');
+    if (dom.tabContentExams) dom.tabContentExams.classList.toggle('active', tabName === 'exams');
+    if (dom.tabContentMock) dom.tabContentMock.classList.toggle('active', tabName === 'mock');
   }
 
   // ---- Subject Selection (Screen 1) ----
   function selectSubject(subCode) {
     if (!SUBJECTS[subCode]) return;
     state.currentSubject = subCode;
+    state.activeTab = 'exams';
     try {
       localStorage.setItem('quizlet_last_subject', subCode);
     } catch {}
@@ -345,41 +436,156 @@
     const sub = getSubConfig();
     const allQuestions = sub.getQuestions();
     const totalExams = getSubjectExamCount();
+    const mocks = loadMockExams(sub.code);
 
     // Dashboard title
     dom.dashboardSubjectCode.textContent = sub.code;
     dom.dashboardSubjectName.textContent = sub.name;
     dom.dashboardSubjectStats.textContent = `${allQuestions.length} câu hỏi • ${totalExams} bộ đề ôn tập`;
-    dom.examListCount.textContent = `${totalExams} bộ đề`;
 
-    // Mock exam section
-    updateMockExamCard();
+    // Tab counts
+    if (dom.tabExamCount) dom.tabExamCount.textContent = totalExams;
+    if (dom.tabMockCount) dom.tabMockCount.textContent = mocks.length;
 
-    // Exam grid
+    // Render contents of both tabs
     renderExamGrid();
+    renderMockHistory(mocks);
+
+    // Activate active tab
+    switchTab(state.activeTab || 'exams');
+
     updateHeaderStats();
   }
 
-  function updateMockExamCard() {
-    const mock = loadMockExamProgress();
-    if (mock && mock.lastScore !== undefined) {
-      const pct = Math.round((mock.lastScore / mock.total) * 100);
-      dom.mockExamHistory.innerHTML = `Lần thi gần nhất: <strong>${mock.lastScore}/${mock.total} câu đúng</strong> (${pct}%)`;
-      dom.mockExamSubactions.innerHTML = `
-        <button class="btn-mock-sub" id="btn-mock-view">Xem lại kết quả</button>
-        <button class="btn-mock-sub" id="btn-mock-review-wrong">Học lại câu sai</button>
-      `;
+  function renderMockHistory(mocks) {
+    if (!mocks || mocks.length === 0) {
+      if (dom.mockHistoryHeader) dom.mockHistoryHeader.style.display = 'none';
+      if (dom.mockHistoryGrid) {
+        dom.mockHistoryGrid.innerHTML = `
+          <div class="mock-empty-state">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-bottom: 10px; opacity: 0.6;">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Chưa có đề thi thử nào</div>
+            <div style="font-size: 13px; color: var(--text-secondary);">Bấm "Tạo đề mới" ở trên để bắt đầu làm đề ngẫu nhiên 50 câu.</div>
+          </div>
+        `;
+      }
+      return;
+    }
 
-      // Attach subaction handlers
-      $('#btn-mock-view').addEventListener('click', () => {
-        showSavedMockResult();
+    if (dom.mockHistoryHeader) dom.mockHistoryHeader.style.display = 'flex';
+    if (dom.mockHistoryCount) dom.mockHistoryCount.textContent = `${mocks.length} đề`;
+
+    let html = '';
+    mocks.forEach((mock) => {
+      const count = mock.questions ? mock.questions.length : 50;
+      const score = mock.lastScore !== undefined ? mock.lastScore : 0;
+      const pct = count > 0 ? Math.round((score / count) * 100) : 0;
+      const isCompleted = !!mock.isCompleted;
+      const answeredCount = mock.answers ? Object.keys(mock.answers).length : 0;
+      const wrongCount = count - score;
+
+      const cardClass = isCompleted ? 'exam-card is-completed mock-card' : 'exam-card mock-card';
+
+      html += `
+        <div class="${cardClass}" data-mock-id="${mock.id}" role="button" tabindex="0">
+          <div class="exam-header-row">
+            <div class="exam-number">#${mock.examNumber || 1}</div>
+            <span class="exam-status-badge ${isCompleted ? 'completed' : 'in-progress'}">
+              ${isCompleted ? `Đã hoàn thành (${score}/${count})` : `Đang làm (${answeredCount}/${count})`}
+            </span>
+          </div>
+          <div class="exam-label">${escapeHtml(mock.title || `Đề thi thử #${mock.examNumber}`)}</div>
+          <div class="exam-info">${count} câu hỏi • ${formatDate(mock.createdAt)}</div>
+
+          <div class="exam-progress">
+            <div class="exam-progress-bar">
+              <div class="exam-progress-fill" style="width: ${pct}%"></div>
+            </div>
+            <div class="exam-progress-text">
+              <span>${pct}% đúng</span>
+              <span class="exam-best">Điểm: ${score}/${count}</span>
+            </div>
+          </div>
+
+          <div class="mock-card-actions">
+            <button class="btn-mock-action btn-mock-view" data-mock-id="${mock.id}" title="Xem lại kết quả">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <span>Xem kết quả</span>
+            </button>
+            ${wrongCount > 0 && isCompleted ? `
+            <button class="btn-mock-action btn-mock-wrong" data-mock-id="${mock.id}" title="Học lại câu sai">
+              <span class="status-dot dot-wrong" style="width: 7px; height: 7px; display: inline-block; border-radius: 50%; background: var(--accent-red);"></span>
+              <span>Ôn sai (${wrongCount})</span>
+            </button>
+            ` : ''}
+            <button class="btn-mock-action btn-mock-redo" data-mock-id="${mock.id}" title="Làm lại đề này">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+              </svg>
+              <span>Làm lại</span>
+            </button>
+            <button class="btn-mock-action btn-mock-delete" data-mock-id="${mock.id}" title="Xoá đề này">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    if (dom.mockHistoryGrid) {
+      dom.mockHistoryGrid.innerHTML = html;
+
+      // Event listeners
+      dom.mockHistoryGrid.querySelectorAll('.mock-card').forEach(card => {
+        const mockId = card.dataset.mockId;
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.btn-mock-action')) return;
+          showMockResultById(mockId);
+        });
+        card.addEventListener('keydown', (e) => {
+          if (e.target.closest('.btn-mock-action')) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            showMockResultById(mockId);
+          }
+        });
       });
-      $('#btn-mock-review-wrong').addEventListener('click', () => {
-        startMockReviewWrong();
+
+      dom.mockHistoryGrid.querySelectorAll('.btn-mock-view').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showMockResultById(btn.dataset.mockId);
+        });
       });
-    } else {
-      dom.mockExamHistory.textContent = 'Chưa làm đề thi thử nào';
-      dom.mockExamSubactions.innerHTML = '';
+
+      dom.mockHistoryGrid.querySelectorAll('.btn-mock-wrong').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          startMockReviewWrongById(btn.dataset.mockId);
+        });
+      });
+
+      dom.mockHistoryGrid.querySelectorAll('.btn-mock-redo').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          restartMockById(btn.dataset.mockId);
+        });
+      });
+
+      dom.mockHistoryGrid.querySelectorAll('.btn-mock-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteMockById(btn.dataset.mockId);
+        });
+      });
     }
   }
 
@@ -479,7 +685,7 @@
     `;
   }
 
-  // ---- Mock Exam Generation ----
+  // ---- Mock Exam Generation & Management ----
   function startMockExam() {
     const sub = getSubConfig();
     const all = sub.getQuestions();
@@ -492,7 +698,29 @@
     const shuffled = shuffle(all);
     const mockQuestions = shuffled.slice(0, Math.min(50, all.length));
 
+    const mocks = loadMockExams(sub.code);
+    const nextNum = mocks.length + 1;
+    const mockId = 'mock_' + Date.now();
+
+    const newMock = {
+      id: mockId,
+      examNumber: nextNum,
+      title: `Đề thi thử #${nextNum}`,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      questions: mockQuestions,
+      answers: {},
+      lastScore: 0,
+      total: mockQuestions.length,
+      isCompleted: false,
+    };
+
+    // Save immediately so it appears in history
+    mocks.unshift(newMock);
+    saveMockExams(mocks, sub.code);
+
     state.isMockExam = true;
+    state.currentMockId = mockId;
     state.currentExam = 'MOCK';
     state.currentIndex = 0;
     state.quizQuestions = mockQuestions;
@@ -500,7 +728,7 @@
     state.selectedMulti = [];
     state.reviewMode = null;
 
-    dom.quizTitle.textContent = `Đề thi thử ngẫu nhiên • 50 câu`;
+    dom.quizTitle.textContent = `${newMock.title} • 50 câu`;
     dom.quizModeTag.textContent = `Thi thử • ${sub.code}`;
     dom.quizModeTag.className = 'quiz-mode-tag visible';
 
@@ -508,11 +736,12 @@
     renderQuestion();
   }
 
-  function showSavedMockResult() {
-    const mock = loadMockExamProgress();
+  function showMockResultById(mockId) {
+    const mock = getMockExamById(mockId);
     if (!mock || !mock.questions) return;
 
     state.isMockExam = true;
+    state.currentMockId = mock.id;
     state.currentExam = 'MOCK';
     state.quizQuestions = mock.questions;
     state.answers = mock.answers || {};
@@ -521,8 +750,8 @@
     showResults(false);
   }
 
-  function startMockReviewWrong() {
-    const mock = loadMockExamProgress();
+  function startMockReviewWrongById(mockId) {
+    const mock = getMockExamById(mockId);
     if (!mock || !mock.questions) return;
 
     const wrongQuestions = mock.questions.filter(q => {
@@ -536,6 +765,7 @@
     }
 
     state.isMockExam = true;
+    state.currentMockId = mock.id;
     state.currentExam = 'MOCK';
     state.currentIndex = 0;
     state.quizQuestions = wrongQuestions;
@@ -543,12 +773,59 @@
     state.selectedMulti = [];
     state.reviewMode = 'wrong';
 
-    dom.quizTitle.textContent = `Đề thi thử — Học lại ${wrongQuestions.length} câu sai`;
+    dom.quizTitle.textContent = `${mock.title} — Học lại ${wrongQuestions.length} câu sai`;
     dom.quizModeTag.textContent = `Học câu sai`;
     dom.quizModeTag.className = 'quiz-mode-tag visible';
 
     showView('quiz');
     renderQuestion();
+  }
+
+  function restartMockById(mockId) {
+    const mock = getMockExamById(mockId);
+    if (!mock || !mock.questions) return;
+
+    state.isMockExam = true;
+    state.currentMockId = mock.id;
+    state.currentExam = 'MOCK';
+    state.currentIndex = 0;
+    state.quizQuestions = mock.questions;
+    state.answers = {};
+    state.selectedMulti = [];
+    state.reviewMode = null;
+
+    // Reset saved answers for this mock in localStorage
+    const sub = getSubConfig();
+    const mocks = loadMockExams(sub.code);
+    const idx = mocks.findIndex(m => m.id === mockId);
+    if (idx >= 0) {
+      mocks[idx].answers = {};
+      mocks[idx].lastScore = 0;
+      mocks[idx].isCompleted = false;
+      mocks[idx].updatedAt = Date.now();
+      saveMockExams(mocks, sub.code);
+    }
+
+    dom.quizTitle.textContent = `${mock.title} • 50 câu`;
+    dom.quizModeTag.textContent = `Thi thử • ${sub.code}`;
+    dom.quizModeTag.className = 'quiz-mode-tag visible';
+
+    showView('quiz');
+    renderQuestion();
+  }
+
+  function deleteMockById(mockId) {
+    const sub = getSubConfig();
+    const mocks = loadMockExams(sub.code);
+    const mock = mocks.find(m => m.id === mockId);
+    const title = mock ? mock.title : 'đề thi thử này';
+    if (!confirm(`Bạn có chắc muốn xoá ${title} khỏi danh sách đề đã thi không?`)) {
+      return;
+    }
+
+    const filtered = mocks.filter(m => m.id !== mockId);
+    saveMockExams(filtered, sub.code);
+    renderSubjectDashboard();
   }
 
   // ---- Show Saved Results (Standard Exam) ----
@@ -743,11 +1020,16 @@
 
     if (!state.reviewMode || state.reviewMode === 'all') {
       saveExamResult(state.currentExam, state.answers, false);
-    } else if (state.reviewMode === 'wrong' && isCorrect && !state.isMockExam) {
-      const progress = loadSubjectProgress();
-      if (progress[state.currentExam] && progress[state.currentExam].answers) {
-        progress[state.currentExam].answers[q.id] = { selected: userSelected, correct: true };
-        saveExamResult(state.currentExam, progress[state.currentExam].answers, false);
+    } else if (state.reviewMode === 'wrong' && isCorrect) {
+      if (state.isMockExam) {
+        state.answers[q.id] = { selected: userSelected, correct: true };
+        saveMockExamResult(state.answers, false);
+      } else {
+        const progress = loadSubjectProgress();
+        if (progress[state.currentExam] && progress[state.currentExam].answers) {
+          progress[state.currentExam].answers[q.id] = { selected: userSelected, correct: true };
+          saveExamResult(state.currentExam, progress[state.currentExam].answers, false);
+        }
       }
     }
 
@@ -799,11 +1081,16 @@
 
     if (!state.reviewMode || state.reviewMode === 'all') {
       saveExamResult(state.currentExam, state.answers, false);
-    } else if (state.reviewMode === 'wrong' && isCorrect && !state.isMockExam) {
-      const progress = loadSubjectProgress();
-      if (progress[state.currentExam] && progress[state.currentExam].answers) {
-        progress[state.currentExam].answers[q.id] = { selected: selectedLetter, correct: true };
-        saveExamResult(state.currentExam, progress[state.currentExam].answers, false);
+    } else if (state.reviewMode === 'wrong' && isCorrect) {
+      if (state.isMockExam) {
+        state.answers[q.id] = { selected: selectedLetter, correct: true };
+        saveMockExamResult(state.answers, false);
+      } else {
+        const progress = loadSubjectProgress();
+        if (progress[state.currentExam] && progress[state.currentExam].answers) {
+          progress[state.currentExam].answers[q.id] = { selected: selectedLetter, correct: true };
+          saveExamResult(state.currentExam, progress[state.currentExam].answers, false);
+        }
       }
     }
 
@@ -956,11 +1243,15 @@
     // Result Header Info
     const sub = getSubConfig();
     if (state.isMockExam) {
-      dom.resultTypeTag.textContent = `Đề thi thử • ${sub.code}`;
+      const mock = getMockExamById(state.currentMockId);
+      const title = mock ? mock.title : 'Đề thi thử';
+      dom.resultTypeTag.textContent = `${title} • ${sub.code}`;
       dom.resultTitle.textContent = `Kết quả thi thử`;
+      if (dom.btnNewMock) dom.btnNewMock.classList.remove('hidden');
     } else {
       dom.resultTypeTag.textContent = `${sub.code} • Bộ đề ${state.currentExam}`;
       dom.resultTitle.textContent = `Bộ đề ${state.currentExam}`;
+      if (dom.btnNewMock) dom.btnNewMock.classList.add('hidden');
     }
 
     if (pct >= 90) {
@@ -1103,6 +1394,14 @@
       }
     });
 
+    // Dashboard Tabs
+    if (dom.tabBtnExams) {
+      dom.tabBtnExams.addEventListener('click', () => switchTab('exams'));
+    }
+    if (dom.tabBtnMock) {
+      dom.tabBtnMock.addEventListener('click', () => switchTab('mock'));
+    }
+
     // Mock exam start button
     dom.btnMockStart.addEventListener('click', startMockExam);
 
@@ -1165,18 +1464,19 @@
 
     dom.btnRestart.addEventListener('click', () => {
       if (state.isMockExam) {
-        // Restart this mock exam with same questions
-        state.currentIndex = 0;
-        state.answers = {};
-        state.selectedMulti = [];
-        state.reviewMode = null;
-        dom.quizTitle.textContent = `Đề thi thử ngẫu nhiên • 50 câu`;
-        showView('quiz');
-        renderQuestion();
+        if (state.currentMockId) {
+          restartMockById(state.currentMockId);
+        } else {
+          startMockExam();
+        }
       } else {
         startExam(state.currentExam, null, null, true);
       }
     });
+
+    if (dom.btnNewMock) {
+      dom.btnNewMock.addEventListener('click', startMockExam);
+    }
 
     dom.btnResultHome.addEventListener('click', goToDashboard);
 

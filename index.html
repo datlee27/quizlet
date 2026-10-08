@@ -23,7 +23,6 @@
         </button>
 
         <div class="logo" id="logo-home">
-          <div class="logo-mark">LLCT</div>
           <div class="logo-text">
             <h1>Quizlet <span class="logo-sub" id="current-subject-label">Lý Luận Chính Trị</span></h1>
           </div>
@@ -112,33 +111,46 @@
           <p class="dashboard-subtitle" id="dashboard-subject-stats">598 câu hỏi • 12 bộ đề</p>
         </div>
 
-        <!-- Mock Exam Banner -->
-        <div class="mock-exam-card" id="mock-exam-card">
-          <div class="mock-exam-content">
-            <div class="mock-exam-tag">Chế độ thi thử</div>
-            <h3 class="mock-exam-title">Đề Thi Thử Ngẫu Nhiên (50 Câu)</h3>
-            <p class="mock-exam-desc">Hệ thống tự động chọn ngẫu nhiên 50 câu hỏi từ toàn bộ kho câu hỏi của môn này để mô phỏng một đề thi thật hoàn chỉnh.</p>
-            <div class="mock-exam-stats" id="mock-exam-history"></div>
+        <!-- Dashboard Tabs -->
+        <div class="dashboard-tabs-wrapper">
+          <div class="dashboard-tabs">
+            <button class="tab-btn active" data-tab="exams" id="tab-btn-exams">
+              <span>Bộ Đề Ôn Tập</span>
+              <span class="tab-count" id="tab-exam-count">12</span>
+            </button>
+            <button class="tab-btn" data-tab="mock" id="tab-btn-mock">
+              <span>Thi Thử</span>
+              <span class="tab-count" id="tab-mock-count">0</span>
+            </button>
           </div>
-          <div class="mock-exam-actions">
+        </div>
+
+        <!-- Tab: Bộ Đề Ôn Tập -->
+        <div class="tab-content active" id="tab-content-exams">
+          <div class="exam-grid" id="exam-grid"></div>
+        </div>
+
+        <!-- Tab: Thi Thử -->
+        <div class="tab-content" id="tab-content-mock">
+          <div class="mock-start-card">
+            <div class="mock-start-info">
+              <h3 class="mock-start-title">Tạo Đề Thi Thử Mới</h3>
+              <p class="mock-start-desc">Hệ thống tự động chọn ngẫu nhiên 50 câu hỏi từ toàn bộ ngân hàng câu hỏi của môn này.</p>
+            </div>
             <button class="btn btn-mock-start" id="btn-mock-start">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="5 3 19 12 5 21 5 3"/>
               </svg>
-              <span>Bắt đầu thi thử</span>
+              <span>Tạo đề mới</span>
             </button>
-            <div class="mock-exam-subactions" id="mock-exam-subactions"></div>
           </div>
-        </div>
 
-        <!-- Section Title -->
-        <div class="section-header">
-          <h3 class="section-title">Danh Sách Bộ Đề Ôn Tập</h3>
-          <span class="section-count" id="exam-list-count">12 bộ đề</span>
+          <div class="mock-history-header" id="mock-history-header" style="display: none;">
+            <h3 class="section-title">Đề đã thi</h3>
+            <span class="section-count" id="mock-history-count">0 đề</span>
+          </div>
+          <div class="mock-history-grid" id="mock-history-grid"></div>
         </div>
-
-        <!-- Exam Grid -->
-        <div class="exam-grid" id="exam-grid"></div>
       </section>
 
       <!-- Quiz View (Flashcard Screen) -->
@@ -240,6 +252,12 @@
                   <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
                 </svg>
                 <span id="btn-restart-text">Làm lại đề này</span>
+              </button>
+              <button class="btn btn-new-mock hidden" id="btn-new-mock">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span>Tạo đề thi mới</span>
               </button>
               <button class="btn btn-home" id="btn-result-home">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
