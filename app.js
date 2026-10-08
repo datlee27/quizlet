@@ -60,7 +60,6 @@
     btnBack: $('#btn-back'),
     btnBackText: $('#btn-back-text'),
     logoHome: $('#logo-home'),
-    currentSubjectLabel: $('#current-subject-label'),
     btnSwitchSubject: $('#btn-switch-subject'),
     headerStats: $('#header-stats'),
 
@@ -348,13 +347,10 @@
     if (viewName === 'subjects') {
       dom.btnBack.classList.add('hidden');
       dom.btnSwitchSubject.classList.add('hidden');
-      dom.currentSubjectLabel.textContent = 'Lý Luận Chính Trị';
     } else if (viewName === 'home') {
       dom.btnBack.classList.remove('hidden');
       dom.btnBackText.textContent = 'Chọn môn';
       dom.btnSwitchSubject.classList.remove('hidden');
-      const sub = getSubConfig();
-      dom.currentSubjectLabel.textContent = sub.shortName;
     } else {
       // quiz or result
       dom.btnBack.classList.remove('hidden');
@@ -460,17 +456,7 @@
   function renderMockHistory(mocks) {
     if (!mocks || mocks.length === 0) {
       if (dom.mockHistoryHeader) dom.mockHistoryHeader.style.display = 'none';
-      if (dom.mockHistoryGrid) {
-        dom.mockHistoryGrid.innerHTML = `
-          <div class="mock-empty-state">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-bottom: 10px; opacity: 0.6;">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
-            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Chưa có đề thi thử nào</div>
-            <div style="font-size: 13px; color: var(--text-secondary);">Bấm "Tạo đề mới" ở trên để bắt đầu làm đề ngẫu nhiên 50 câu.</div>
-          </div>
-        `;
-      }
+      if (dom.mockHistoryGrid) dom.mockHistoryGrid.innerHTML = '';
       return;
     }
 
