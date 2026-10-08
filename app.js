@@ -1,31 +1,50 @@
 /* ========================================
-   MLN111 Quizlet — Application Logic
+   Quizlet — Application Logic (Multi-Subject & Exam Simulation)
    ======================================== */
 
 (function () {
   'use strict';
 
-  // ---- Constants ----
-  const EXAMS_COUNT = 12;
-  const QUESTIONS_PER_EXAM = 50;
-  const STORAGE_KEY = 'mln111_quizlet_progress_v2';
+  // ---- Subjects Configuration ----
+  const SUBJECTS = {
+    MLN111: {
+      code: 'MLN111',
+      name: 'Triết học Mác - Lênin',
+      shortName: 'Triết học',
+      getQuestions: () => (typeof QUESTIONS !== 'undefined' ? QUESTIONS : []),
+      storageKey: 'mln111_quizlet_progress_v2',
+      mockStorageKey: 'mln111_mock_exam_progress_v2',
+      questionsPerExam: 50,
+    },
+    MLN122: {
+      code: 'MLN122',
+      name: 'Kinh tế chính trị Mác - Lênin',
+      shortName: 'Kinh tế chính trị',
+      getQuestions: () => (typeof MLN122_QUESTIONS !== 'undefined' ? MLN122_QUESTIONS : []),
+      storageKey: 'mln122_quizlet_progress_v2',
+      mockStorageKey: 'mln122_mock_exam_progress_v2',
+      questionsPerExam: 50,
+    }
+  };
 
   // Migrate old storage if exists
   try {
     const old = localStorage.getItem('mln111_quizlet_progress');
-    if (old && !localStorage.getItem(STORAGE_KEY)) {
-      localStorage.setItem(STORAGE_KEY, old);
+    if (old && !localStorage.getItem(SUBJECTS.MLN111.storageKey)) {
+      localStorage.setItem(SUBJECTS.MLN111.storageKey, old);
     }
   } catch (e) {}
 
   // ---- State ----
   let state = {
-    currentView: 'home',    // 'home' | 'quiz' | 'result'
-    currentExam: null,       // 1-12
-    currentIndex: 0,         // current question index within quiz
-    quizQuestions: [],        // array of question objects for current quiz
-    answers: {},             // { questionId: { selected: 'A' | ['A','B'], correct: bool } }
-    selectedMulti: [],       // temporary array for multi-answer questions: ['A', 'C']
+    currentSubject: null,    // null | 'MLN111' | 'MLN122'
+    currentView: 'subjects', // 'subjects' | 'home' | 'quiz' | 'result'
+    currentExam: null,       // number (1-12) or 'MOCK'
+    isMockExam: false,
+    currentIndex: 0,
+    quizQuestions: [],
+    answers: {},
+    selectedMulti: [],
     isFlipped: false,
     isAnswered: false,
     reviewMode: null,        // null | 'wrong' | 'correct' | 'all'
@@ -37,12 +56,33 @@
 
   const dom = {
     btnBack: $('#btn-back'),
+    btnBackText: $('#btn-back-text'),
     logoHome: $('#logo-home'),
+    currentSubjectLabel: $('#current-subject-label'),
+    btnSwitchSubject: $('#btn-switch-subject'),
     headerStats: $('#header-stats'),
+
+    viewSubjects: $('#view-subjects'),
     viewHome: $('#view-home'),
     viewQuiz: $('#view-quiz'),
     viewResult: $('#view-result'),
+
+    mln111ProgressFill: $('#mln111-progress-fill'),
+    mln111ProgressLabel: $('#mln111-progress-label'),
+    mln122ProgressFill: $('#mln122-progress-fill'),
+    mln122ProgressLabel: $('#mln122-progress-label'),
+
+    dashboardSubjectCode: $('#dashboard-subject-code'),
+    dashboardSubjectName: $('#dashboard-subject-name'),
+    dashboardSubjectStats: $('#dashboard-subject-stats'),
+
+    btnMockStart: $('#btn-mock-start'),
+    mockExamHistory: $('#mock-exam-history'),
+    mockExamSubactions: $('#mock-exam-subactions'),
+
+    examListCount: $('#exam-list-count'),
     examGrid: $('#exam-grid'),
+
     btnQuizBack: $('#btn-quiz-back'),
     quizModeTag: $('#quiz-mode-tag'),
     quizTitle: $('#quiz-title'),
@@ -57,12 +97,13 @@
     multiConfirmWrapper: $('#multi-confirm-wrapper'),
     btnConfirmMulti: $('#btn-confirm-multi'),
     multiCount: $('#multi-count'),
-    resultIcon: $('#result-icon'),
+    resultStatusBadge: $('#result-status-badge'),
     questionTextBack: $('#question-text-back'),
     answerReview: $('#answer-review'),
     noteBox: $('#note-box'),
     btnNext: $('#btn-next'),
-    resultEmoji: $('#result-emoji'),
+
+    resultTypeTag: $('#result-type-tag'),
     resultTitle: $('#result-title'),
     resultSubtitle: $('#result-subtitle'),
     scoreFill: $('#score-fill'),
@@ -70,16 +111,47 @@
     scoreTotal: $('#score-total'),
     resultStats: $('#result-stats'),
     btnReviewWrong: $('#btn-review-wrong'),
+    btnReviewWrongText: $('#btn-review-wrong-text'),
     btnReviewCorrect: $('#btn-review-correct'),
+    btnReviewCorrectText: $('#btn-review-correct-text'),
     btnRestart: $('#btn-restart'),
+    btnRestartText: $('#btn-restart-text'),
     btnResultHome: $('#btn-result-home'),
     reviewList: $('#review-list'),
   };
 
+  // ---- Helper: Get Current Subject Info ----
+  function getSubConfig() {
+    return SUBJECTS[state.currentSubject] || SUBJECTS.MLN111;
+  }
+
+  function getSubjectQuestions(subCode = state.currentSubject) {
+    const sub = SUBJECTS[subCode];
+    return sub ? sub.getQuestions() : [];
+  }
+
+  function getSubjectExamCount(subCode = state.currentSubject) {
+    const sub = SUBJECTS[subCode];
+    if (!sub) return 0;
+    const totalQ = sub.getQuestions().length;
+    return Math.ceil(totalQ / sub.questionsPerExam);
+  }
+
+  function getSubjectExamQuestions(subCode, examNum) {
+    const sub = SUBJECTS[subCode];
+    if (!sub) return [];
+    const all = sub.getQuestions();
+    const start = (examNum - 1) * sub.questionsPerExam;
+    const end = Math.min(start + sub.questionsPerExam, all.length);
+    return all.slice(start, end);
+  }
+
   // ---- Persistence ----
-  function loadProgress() {
+  function loadSubjectProgress(subCode = state.currentSubject) {
+    const sub = SUBJECTS[subCode];
+    if (!sub) return {};
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
+      const data = localStorage.getItem(sub.storageKey);
       return data ? JSON.parse(data) : {};
     } catch {
       return {};
@@ -87,12 +159,18 @@
   }
 
   function saveExamResult(examNum, answers, isCompleted = false) {
-    if (!examNum) return;
-    const progress = loadProgress();
-    const questions = getExamQuestions(examNum);
+    if (!state.currentSubject || !examNum) return;
+
+    if (state.isMockExam) {
+      saveMockExamResult(answers, isCompleted);
+      return;
+    }
+
+    const sub = getSubConfig();
+    const progress = loadSubjectProgress();
+    const questions = getSubjectExamQuestions(state.currentSubject, examNum);
     const total = questions.length;
 
-    // Count correct based on all questions in this exam
     let correctCount = 0;
     Object.keys(answers).forEach((qid) => {
       if (answers[qid] && answers[qid].correct) {
@@ -117,19 +195,43 @@
     progress[examNum].answers = answers;
     progress[examNum].updatedAt = Date.now();
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    localStorage.setItem(sub.storageKey, JSON.stringify(progress));
     updateHeaderStats();
+    updateSubjectProgressCards();
   }
 
-  function updateHeaderStats() {
-    const progress = loadProgress();
-    const totalAttempts = Object.values(progress).reduce((sum, p) => sum + (p.attempts || 0), 0);
-    const completedExams = Object.values(progress).filter(p => p.answers && Object.keys(p.answers).length > 0).length;
-    if (completedExams > 0 || totalAttempts > 0) {
-      dom.headerStats.innerHTML = `
-        <span class="stat-badge">📚 Đã làm: ${completedExams}/12 đề</span>
-      `;
+  // Mock Exam Persistence
+  function loadMockExamProgress(subCode = state.currentSubject) {
+    const sub = SUBJECTS[subCode];
+    if (!sub) return null;
+    try {
+      const data = localStorage.getItem(sub.mockStorageKey);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
     }
+  }
+
+  function saveMockExamResult(answers, isCompleted = false) {
+    const sub = getSubConfig();
+    let correctCount = 0;
+    Object.keys(answers).forEach((qid) => {
+      if (answers[qid] && answers[qid].correct) {
+        correctCount++;
+      }
+    });
+
+    const mockData = {
+      questions: state.quizQuestions,
+      answers: answers,
+      lastScore: correctCount,
+      total: state.quizQuestions.length,
+      isCompleted: isCompleted,
+      updatedAt: Date.now(),
+    };
+
+    localStorage.setItem(sub.mockStorageKey, JSON.stringify(mockData));
+    updateMockExamCard();
   }
 
   // ---- Utility ----
@@ -142,68 +244,173 @@
     return a;
   }
 
-  function getExamQuestions(examNum) {
-    const start = (examNum - 1) * QUESTIONS_PER_EXAM;
-    const end = Math.min(start + QUESTIONS_PER_EXAM, QUESTIONS.length);
-    return QUESTIONS.slice(start, end);
-  }
-
-  function getExamQuestionCount(examNum) {
-    const start = (examNum - 1) * QUESTIONS_PER_EXAM;
-    const end = Math.min(start + QUESTIONS_PER_EXAM, QUESTIONS.length);
-    return end - start;
-  }
-
   function isMultiAnswerQuestion(q) {
     return !!(q.multiAnswer || (Array.isArray(q.answer) && q.answer.length > 1));
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   // ---- Navigation ----
   function showView(viewName) {
     state.currentView = viewName;
+    dom.viewSubjects.classList.toggle('active', viewName === 'subjects');
     dom.viewHome.classList.toggle('active', viewName === 'home');
     dom.viewQuiz.classList.toggle('active', viewName === 'quiz');
     dom.viewResult.classList.toggle('active', viewName === 'result');
-    dom.btnBack.classList.toggle('hidden', viewName === 'home');
+
+    // Header buttons control
+    if (viewName === 'subjects') {
+      dom.btnBack.classList.add('hidden');
+      dom.btnSwitchSubject.classList.add('hidden');
+      dom.currentSubjectLabel.textContent = 'Lý Luận Chính Trị';
+    } else if (viewName === 'home') {
+      dom.btnBack.classList.remove('hidden');
+      dom.btnBackText.textContent = 'Chọn môn';
+      dom.btnSwitchSubject.classList.remove('hidden');
+      const sub = getSubConfig();
+      dom.currentSubjectLabel.textContent = sub.shortName;
+    } else {
+      // quiz or result
+      dom.btnBack.classList.remove('hidden');
+      dom.btnBackText.textContent = 'Danh sách đề';
+      dom.btnSwitchSubject.classList.remove('hidden');
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function goHome() {
-    // If we're leaving quiz, save answers so far if not in temporary review mode
+  function goToSubjects() {
+    state.currentExam = null;
+    state.isMockExam = false;
+    state.reviewMode = null;
+    showView('subjects');
+    updateSubjectProgressCards();
+  }
+
+  function goToDashboard() {
     if (state.currentView === 'quiz' && state.currentExam && (!state.reviewMode || state.reviewMode === 'all')) {
       if (Object.keys(state.answers).length > 0) {
         saveExamResult(state.currentExam, state.answers, false);
       }
     }
     state.currentExam = null;
+    state.isMockExam = false;
     state.reviewMode = null;
     showView('home');
-    renderExamGrid();
+    renderSubjectDashboard();
   }
 
-  // ---- Render: Home ----
+  // ---- Subject Selection (Screen 1) ----
+  function selectSubject(subCode) {
+    if (!SUBJECTS[subCode]) return;
+    state.currentSubject = subCode;
+    try {
+      localStorage.setItem('quizlet_last_subject', subCode);
+    } catch {}
+    goToDashboard();
+  }
+
+  function updateSubjectProgressCards() {
+    // MLN111
+    const p111 = loadSubjectProgress('MLN111');
+    const total111Exams = getSubjectExamCount('MLN111');
+    const completed111 = Object.values(p111).filter(p => p.answers && Object.keys(p.answers).length > 0).length;
+    const pct111 = Math.round((completed111 / total111Exams) * 100);
+    dom.mln111ProgressFill.style.width = `${pct111}%`;
+    dom.mln111ProgressLabel.innerHTML = completed111 > 0 ?
+      `<span>Đã học ${completed111}/${total111Exams} bộ đề</span><span>${pct111}%</span>` :
+      `<span>Chưa làm bài nào</span><span>0%</span>`;
+
+    // MLN122
+    const p122 = loadSubjectProgress('MLN122');
+    const total122Exams = getSubjectExamCount('MLN122');
+    const completed122 = Object.values(p122).filter(p => p.answers && Object.keys(p.answers).length > 0).length;
+    const pct122 = Math.round((completed122 / total122Exams) * 100);
+    dom.mln122ProgressFill.style.width = `${pct122}%`;
+    dom.mln122ProgressLabel.innerHTML = completed122 > 0 ?
+      `<span>Đã học ${completed122}/${total122Exams} bộ đề</span><span>${pct122}%</span>` :
+      `<span>Chưa làm bài nào</span><span>0%</span>`;
+  }
+
+  // ---- Subject Dashboard (Screen 2) ----
+  function renderSubjectDashboard() {
+    const sub = getSubConfig();
+    const allQuestions = sub.getQuestions();
+    const totalExams = getSubjectExamCount();
+
+    // Dashboard title
+    dom.dashboardSubjectCode.textContent = sub.code;
+    dom.dashboardSubjectName.textContent = sub.name;
+    dom.dashboardSubjectStats.textContent = `${allQuestions.length} câu hỏi • ${totalExams} bộ đề ôn tập`;
+    dom.examListCount.textContent = `${totalExams} bộ đề`;
+
+    // Mock exam section
+    updateMockExamCard();
+
+    // Exam grid
+    renderExamGrid();
+    updateHeaderStats();
+  }
+
+  function updateMockExamCard() {
+    const mock = loadMockExamProgress();
+    if (mock && mock.lastScore !== undefined) {
+      const pct = Math.round((mock.lastScore / mock.total) * 100);
+      dom.mockExamHistory.innerHTML = `Lần thi gần nhất: <strong>${mock.lastScore}/${mock.total} câu đúng</strong> (${pct}%)`;
+      dom.mockExamSubactions.innerHTML = `
+        <button class="btn-mock-sub" id="btn-mock-view">Xem lại kết quả</button>
+        <button class="btn-mock-sub" id="btn-mock-review-wrong">Học lại câu sai</button>
+      `;
+
+      // Attach subaction handlers
+      $('#btn-mock-view').addEventListener('click', () => {
+        showSavedMockResult();
+      });
+      $('#btn-mock-review-wrong').addEventListener('click', () => {
+        startMockReviewWrong();
+      });
+    } else {
+      dom.mockExamHistory.textContent = 'Chưa làm đề thi thử nào';
+      dom.mockExamSubactions.innerHTML = '';
+    }
+  }
+
   function renderExamGrid() {
-    const progress = loadProgress();
+    const sub = getSubConfig();
+    const totalExams = getSubjectExamCount();
+    const progress = loadSubjectProgress();
+    const allQuestions = sub.getQuestions();
     let html = '';
 
-    for (let i = 1; i <= EXAMS_COUNT; i++) {
-      const count = getExamQuestionCount(i);
+    for (let i = 1; i <= totalExams; i++) {
+      const examQuestions = getSubjectExamQuestions(state.currentSubject, i);
+      const count = examQuestions.length;
       const p = progress[i] || { attempts: 0, bestScore: 0, answers: {} };
       const hasAnswers = p.answers && Object.keys(p.answers).length > 0;
       const score = p.lastScore !== undefined ? p.lastScore : p.bestScore;
       const pct = hasAnswers ? Math.round((score / count) * 100) : 0;
 
       const cardClass = hasAnswers ? 'exam-card is-completed' : 'exam-card';
+      const startNum = (i - 1) * sub.questionsPerExam + 1;
+      const endNum = Math.min(i * sub.questionsPerExam, allQuestions.length);
 
       html += `
-        <div class="${cardClass}" data-exam="${i}" role="button" tabindex="0" aria-label="Bộ đề ${i}">
+        <div class="${cardClass}" data-exam="${i}" role="button" tabindex="0">
           <div class="exam-header-row">
             <div class="exam-number">${String(i).padStart(2, '0')}</div>
-            ${hasAnswers ? `<span class="exam-status-badge">✓ Đã làm (${score}/${count})</span>` : ''}
+            ${hasAnswers ? `<span class="exam-status-badge">Đã làm (${score}/${count})</span>` : ''}
           </div>
           <div class="exam-label">Bộ đề ${i}</div>
-          <div class="exam-info">${count} câu hỏi • Câu ${(i - 1) * QUESTIONS_PER_EXAM + 1}–${Math.min(i * QUESTIONS_PER_EXAM, QUESTIONS.length)}</div>
-          
+          <div class="exam-info">${count} câu hỏi • Câu ${startNum}–${endNum}</div>
+
           <div class="exam-progress">
             <div class="exam-progress-bar">
               <div class="exam-progress-fill" style="width: ${hasAnswers ? pct : 0}%"></div>
@@ -216,8 +423,8 @@
 
           ${hasAnswers ? `
             <div class="exam-card-actions">
-              <button class="btn-card-action primary btn-action-view" data-exam="${i}">📋 Xem kết quả</button>
-              <button class="btn-card-action btn-action-restart" data-exam="${i}">🔄 Làm lại</button>
+              <button class="btn-card-action primary btn-action-view" data-exam="${i}">Xem kết quả</button>
+              <button class="btn-card-action btn-action-restart" data-exam="${i}">Làm lại</button>
             </div>
           ` : ''}
         </div>
@@ -226,44 +433,22 @@
 
     dom.examGrid.innerHTML = html;
 
-    // Attach click handlers
+    // Attach card handlers
     dom.examGrid.querySelectorAll('.exam-card').forEach(card => {
       const examNum = parseInt(card.dataset.exam);
 
-      // Card main click
       card.addEventListener('click', (e) => {
-        // If clicking action buttons, do not trigger card click
         if (e.target.closest('.btn-card-action')) return;
-
         const p = progress[examNum];
         const hasAnswers = p && p.answers && Object.keys(p.answers).length > 0;
-
         if (hasAnswers) {
-          // If already done, open results page directly as requested!
           showSavedResults(examNum);
         } else {
-          // If not done, start quiz from scratch
           startExam(examNum, null, null, true);
-        }
-      });
-
-      // Card keyboard Enter / Space
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          if (e.target.closest('.btn-card-action')) return;
-          e.preventDefault();
-          const p = progress[examNum];
-          const hasAnswers = p && p.answers && Object.keys(p.answers).length > 0;
-          if (hasAnswers) {
-            showSavedResults(examNum);
-          } else {
-            startExam(examNum, null, null, true);
-          }
         }
       });
     });
 
-    // Action button clicks inside cards
     dom.examGrid.querySelectorAll('.btn-action-view').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -281,25 +466,112 @@
     });
   }
 
-  // ---- Show Saved Results ----
+  function updateHeaderStats() {
+    if (!state.currentSubject) {
+      dom.headerStats.innerHTML = '';
+      return;
+    }
+    const progress = loadSubjectProgress();
+    const totalExams = getSubjectExamCount();
+    const completed = Object.values(progress).filter(p => p.answers && Object.keys(p.answers).length > 0).length;
+    dom.headerStats.innerHTML = `
+      <span class="stat-badge">Tiến độ: ${completed}/${totalExams} đề</span>
+    `;
+  }
+
+  // ---- Mock Exam Generation ----
+  function startMockExam() {
+    const sub = getSubConfig();
+    const all = sub.getQuestions();
+    if (all.length === 0) {
+      alert('Không có câu hỏi nào để tạo đề thi!');
+      return;
+    }
+
+    // Pick 50 random distinct questions
+    const shuffled = shuffle(all);
+    const mockQuestions = shuffled.slice(0, Math.min(50, all.length));
+
+    state.isMockExam = true;
+    state.currentExam = 'MOCK';
+    state.currentIndex = 0;
+    state.quizQuestions = mockQuestions;
+    state.answers = {};
+    state.selectedMulti = [];
+    state.reviewMode = null;
+
+    dom.quizTitle.textContent = `Đề thi thử ngẫu nhiên • 50 câu`;
+    dom.quizModeTag.textContent = `Thi thử • ${sub.code}`;
+    dom.quizModeTag.className = 'quiz-mode-tag visible';
+
+    showView('quiz');
+    renderQuestion();
+  }
+
+  function showSavedMockResult() {
+    const mock = loadMockExamProgress();
+    if (!mock || !mock.questions) return;
+
+    state.isMockExam = true;
+    state.currentExam = 'MOCK';
+    state.quizQuestions = mock.questions;
+    state.answers = mock.answers || {};
+    state.reviewMode = null;
+
+    showResults(false);
+  }
+
+  function startMockReviewWrong() {
+    const mock = loadMockExamProgress();
+    if (!mock || !mock.questions) return;
+
+    const wrongQuestions = mock.questions.filter(q => {
+      const a = mock.answers && mock.answers[q.id];
+      return !a || !a.correct;
+    });
+
+    if (wrongQuestions.length === 0) {
+      alert('Đề thi thử này bạn không có câu sai nào!');
+      return;
+    }
+
+    state.isMockExam = true;
+    state.currentExam = 'MOCK';
+    state.currentIndex = 0;
+    state.quizQuestions = wrongQuestions;
+    state.answers = mock.answers || {};
+    state.selectedMulti = [];
+    state.reviewMode = 'wrong';
+
+    dom.quizTitle.textContent = `Đề thi thử — Học lại ${wrongQuestions.length} câu sai`;
+    dom.quizModeTag.textContent = `Học câu sai`;
+    dom.quizModeTag.className = 'quiz-mode-tag visible';
+
+    showView('quiz');
+    renderQuestion();
+  }
+
+  // ---- Show Saved Results (Standard Exam) ----
   function showSavedResults(examNum) {
-    const progress = loadProgress();
+    const progress = loadSubjectProgress();
     const p = progress[examNum];
     if (!p || !p.answers || Object.keys(p.answers).length === 0) {
       startExam(examNum, null, null, true);
       return;
     }
 
+    state.isMockExam = false;
     state.currentExam = examNum;
-    state.quizQuestions = getExamQuestions(examNum);
+    state.quizQuestions = getSubjectExamQuestions(state.currentSubject, examNum);
     state.answers = { ...p.answers };
     state.reviewMode = null;
 
     showResults(false);
   }
 
-  // ---- Start Exam ----
+  // ---- Start Standard Exam ----
   function startExam(examNum, mode = null, filterFn = null, isFresh = false) {
+    state.isMockExam = false;
     state.currentExam = examNum;
     state.currentIndex = 0;
     state.isFlipped = false;
@@ -307,7 +579,7 @@
     state.selectedMulti = [];
     state.reviewMode = mode;
 
-    let allExamQuestions = getExamQuestions(examNum);
+    const allExamQuestions = getSubjectExamQuestions(state.currentSubject, examNum);
     let questions = allExamQuestions;
 
     if (filterFn) {
@@ -321,11 +593,9 @@
     state.quizQuestions = questions;
 
     if (isFresh) {
-      // Start completely fresh
       state.answers = {};
     } else if (mode === 'wrong' || mode === 'correct') {
-      // Keep existing full answers, but we'll review selected questions
-      const progress = loadProgress();
+      const progress = loadSubjectProgress();
       if (progress[examNum] && progress[examNum].answers) {
         state.answers = { ...progress[examNum].answers };
       }
@@ -336,16 +606,16 @@
       return;
     }
 
-    // Header tag and title
-    let title = `Bộ đề ${examNum}`;
+    const sub = getSubConfig();
+    let title = `${sub.code} — Bộ đề ${examNum}`;
     if (mode === 'wrong') {
-      dom.quizModeTag.textContent = `🔴 Học lại ${questions.length} câu sai`;
+      dom.quizModeTag.textContent = `Học lại ${questions.length} câu sai`;
       dom.quizModeTag.className = 'quiz-mode-tag visible';
     } else if (mode === 'correct') {
-      dom.quizModeTag.textContent = `🟢 Ôn lại ${questions.length} câu đúng`;
+      dom.quizModeTag.textContent = `Ôn lại ${questions.length} câu đúng`;
       dom.quizModeTag.className = 'quiz-mode-tag visible';
     } else {
-      dom.quizModeTag.textContent = `50 câu hỏi`;
+      dom.quizModeTag.textContent = `${questions.length} câu hỏi`;
       dom.quizModeTag.className = 'quiz-mode-tag visible';
     }
 
@@ -359,14 +629,12 @@
     const q = state.quizQuestions[state.currentIndex];
     if (!q) return;
 
-    // Reset card
     state.isFlipped = false;
     state.isAnswered = false;
     state.selectedMulti = [];
     dom.flashcard.classList.remove('flipped');
     dom.btnNext.classList.remove('visible');
 
-    // Progress
     const total = state.quizQuestions.length;
     const current = state.currentIndex + 1;
     dom.quizCounter.textContent = `${current} / ${total}`;
@@ -374,28 +642,25 @@
 
     const multi = isMultiAnswerQuestion(q);
 
-    // Badge
     let badgeText = `Câu ${q.id}`;
     if (multi) {
       badgeText += ' <span class="multi-answer-badge">Chọn nhiều đáp án</span>';
     }
     dom.questionBadge.innerHTML = badgeText;
 
-    // Question text + Multi-hint
     if (multi) {
       dom.questionText.innerHTML = `
         ${escapeHtml(q.question)}
-        <div class="multi-hint">💡 <strong>Câu hỏi chọn nhiều đáp án:</strong> Hãy nhấp chọn các đáp án bạn nghĩ là đúng, sau đó bấm nút <strong>Xác nhận câu trả lời</strong> bên dưới.</div>
+        <div class="multi-hint">Câu hỏi này yêu cầu chọn nhiều đáp án. Hãy nhấp chọn các đáp án bạn cho là đúng, sau đó bấm Xác nhận bên dưới.</div>
       `;
     } else {
       dom.questionText.textContent = q.question;
     }
 
-    // Options
     let optionsHtml = '';
     q.options.forEach((opt, idx) => {
       const letter = opt.charAt(0);
-      const text = opt.substring(3); // Remove "A. " prefix
+      const text = opt.substring(3);
       optionsHtml += `
         <button class="option-btn" data-letter="${letter}" data-index="${idx}">
           <span class="option-letter">${letter}</span>
@@ -405,39 +670,27 @@
     });
     dom.optionsList.innerHTML = optionsHtml;
 
-    // Multi-answer confirm button controls
     if (multi) {
       dom.multiConfirmWrapper.classList.remove('hidden');
       dom.btnConfirmMulti.disabled = true;
-      dom.btnConfirmMulti.textContent = '✓ Xác nhận câu trả lời (0 đã chọn)';
+      dom.btnConfirmMulti.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Xác nhận câu trả lời (0 đã chọn)</span>
+      `;
       if (dom.multiCount) dom.multiCount.textContent = '0';
 
-      // Attach toggle click handlers
       dom.optionsList.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', () => toggleMultiOption(btn));
       });
     } else {
       dom.multiConfirmWrapper.classList.add('hidden');
-
-      // Attach single click handlers
       dom.optionsList.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', () => handleSingleAnswer(btn));
       });
     }
 
-    // Scroll to top of card
     dom.flashcard.scrollTop = 0;
     adjustCardHeight();
-  }
-
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
   }
 
   function adjustCardHeight() {
@@ -450,10 +703,8 @@
     });
   }
 
-  // ---- Multi-answer: Toggle option ----
   function toggleMultiOption(btn) {
     if (state.isAnswered) return;
-
     const letter = btn.dataset.letter;
     const idx = state.selectedMulti.indexOf(letter);
 
@@ -466,16 +717,15 @@
     }
 
     const count = state.selectedMulti.length;
-    if (dom.multiCount) dom.multiCount.textContent = count;
     dom.btnConfirmMulti.disabled = (count === 0);
-    dom.btnConfirmMulti.textContent = `✓ Xác nhận câu trả lời (${count} đã chọn)`;
+    dom.btnConfirmMulti.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>Xác nhận câu trả lời (${count} đã chọn)</span>
+    `;
   }
 
-  // ---- Multi-answer: Submit ----
   function submitMultiAnswer() {
-    if (state.isAnswered) return;
-    if (state.selectedMulti.length === 0) return;
-
+    if (state.isAnswered || state.selectedMulti.length === 0) return;
     state.isAnswered = true;
     dom.btnConfirmMulti.disabled = true;
 
@@ -483,69 +733,51 @@
     const userSelected = [...state.selectedMulti].sort();
     const correctAnswers = [...(Array.isArray(q.answer) ? q.answer : [q.answer])].sort();
 
-    // Determine correctness: user selection must exactly match correct answers
     const isCorrect = userSelected.length === correctAnswers.length &&
       userSelected.every((val, idx) => val === correctAnswers[idx]);
 
-    // Save answer
     state.answers[q.id] = {
       selected: userSelected,
       correct: isCorrect,
     };
 
-    // Auto-save to localStorage
     if (!state.reviewMode || state.reviewMode === 'all') {
       saveExamResult(state.currentExam, state.answers, false);
-    } else if (state.reviewMode === 'wrong' && isCorrect) {
-      const progress = loadProgress();
+    } else if (state.reviewMode === 'wrong' && isCorrect && !state.isMockExam) {
+      const progress = loadSubjectProgress();
       if (progress[state.currentExam] && progress[state.currentExam].answers) {
         progress[state.currentExam].answers[q.id] = { selected: userSelected, correct: true };
         saveExamResult(state.currentExam, progress[state.currentExam].answers, false);
       }
     }
 
-    // Disable all options
     dom.optionsList.querySelectorAll('.option-btn').forEach(b => {
       b.classList.add('disabled');
       const letter = b.dataset.letter;
-
       if (correctAnswers.includes(letter)) {
         if (userSelected.includes(letter)) {
           b.classList.remove('selected');
           b.classList.add('correct');
         } else {
-          // Correct answer that was missed
           b.classList.add('correct-answer');
         }
       } else {
         if (userSelected.includes(letter)) {
-          // Wrong answer that user picked
           b.classList.remove('selected');
           b.classList.add('wrong');
         }
       }
     });
 
-    // Show card back
     renderCardBack(q, userSelected, isCorrect);
 
-    // Flip card after short delay
     setTimeout(() => {
       dom.flashcard.classList.add('flipped');
       dom.btnNext.classList.add('visible');
-
-      requestAnimationFrame(() => {
-        const backHeight = dom.cardBack.scrollHeight;
-        const frontHeight = dom.cardFront.scrollHeight;
-        const minHeight = Math.max(420, frontHeight, backHeight);
-        dom.flashcard.style.minHeight = minHeight + 'px';
-        dom.cardFront.style.minHeight = minHeight + 'px';
-        dom.cardBack.style.minHeight = minHeight + 'px';
-      });
+      adjustCardHeight();
     }, 700);
   }
 
-  // ---- Single-answer: Handle Answer ----
   function handleSingleAnswer(btn) {
     if (state.isAnswered) return;
     state.isAnswered = true;
@@ -553,7 +785,6 @@
     const q = state.quizQuestions[state.currentIndex];
     const selectedLetter = btn.dataset.letter;
 
-    // Determine if correct
     let isCorrect = false;
     if (Array.isArray(q.answer)) {
       isCorrect = q.answer.includes(selectedLetter);
@@ -561,33 +792,27 @@
       isCorrect = selectedLetter === q.answer;
     }
 
-    // Save answer in state
     state.answers[q.id] = {
       selected: selectedLetter,
       correct: isCorrect,
     };
 
-    // Auto-save to localStorage right away!
     if (!state.reviewMode || state.reviewMode === 'all') {
       saveExamResult(state.currentExam, state.answers, false);
-    } else if (state.reviewMode === 'wrong' && isCorrect) {
-      // If user was reviewing wrong and got it right, update main exam answers as well!
-      const progress = loadProgress();
+    } else if (state.reviewMode === 'wrong' && isCorrect && !state.isMockExam) {
+      const progress = loadSubjectProgress();
       if (progress[state.currentExam] && progress[state.currentExam].answers) {
         progress[state.currentExam].answers[q.id] = { selected: selectedLetter, correct: true };
         saveExamResult(state.currentExam, progress[state.currentExam].answers, false);
       }
     }
 
-    // Disable all options
     dom.optionsList.querySelectorAll('.option-btn').forEach(b => {
       b.classList.add('disabled');
     });
 
-    // Highlight selected
     btn.classList.add(isCorrect ? 'correct' : 'wrong');
 
-    // If wrong, highlight the correct answer
     if (!isCorrect) {
       const correctAnswer = Array.isArray(q.answer) ? q.answer : [q.answer];
       dom.optionsList.querySelectorAll('.option-btn').forEach(b => {
@@ -597,28 +822,32 @@
       });
     }
 
-    // Show back card content
     renderCardBack(q, selectedLetter, isCorrect);
 
-    // Flip card after short delay
     setTimeout(() => {
       dom.flashcard.classList.add('flipped');
       dom.btnNext.classList.add('visible');
-
-      requestAnimationFrame(() => {
-        const backHeight = dom.cardBack.scrollHeight;
-        const frontHeight = dom.cardFront.scrollHeight;
-        const minHeight = Math.max(420, frontHeight, backHeight);
-        dom.flashcard.style.minHeight = minHeight + 'px';
-        dom.cardFront.style.minHeight = minHeight + 'px';
-        dom.cardBack.style.minHeight = minHeight + 'px';
-      });
+      adjustCardHeight();
     }, 700);
   }
 
   // ---- Render Card Back ----
   function renderCardBack(q, selected, isCorrect) {
-    dom.resultIcon.textContent = isCorrect ? '✅' : '❌';
+    // Result Status Badge (SVG, No Emoji)
+    if (isCorrect) {
+      dom.resultStatusBadge.className = 'result-status-badge correct';
+      dom.resultStatusBadge.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Chính xác</span>
+      `;
+    } else {
+      dom.resultStatusBadge.className = 'result-status-badge wrong';
+      dom.resultStatusBadge.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span>Chưa chính xác</span>
+      `;
+    }
+
     dom.questionTextBack.textContent = q.question;
 
     const correctLetters = Array.isArray(q.answer) ? q.answer : [q.answer];
@@ -627,7 +856,6 @@
     const selectedLetters = Array.isArray(selected) ? selected : (selected ? [selected] : []);
     const selectedLettersStr = selectedLetters.length > 0 ? selectedLetters.join(', ') : '(Không chọn)';
 
-    // Build text details
     const correctItemsHtml = correctLetters.map(l => {
       return `<div><strong>${l}.</strong> ${escapeHtml(getOptionText(q, l))}</div>`;
     }).join('');
@@ -642,7 +870,7 @@
       reviewHtml += `
         <div class="answer-item correct-highlight">
           <div>
-            <div class="answer-label" style="color: var(--accent-green); margin-bottom: 4px;">✓ Bạn đã trả lời đúng (${correctLettersStr}):</div>
+            <div class="answer-label" style="color: var(--accent-green); margin-bottom: 4px;">Đáp án đúng (${correctLettersStr}):</div>
             <div style="font-size: 13.5px; opacity: 0.95;">${correctItemsHtml}</div>
           </div>
         </div>
@@ -651,13 +879,13 @@
       reviewHtml += `
         <div class="answer-item wrong-highlight">
           <div>
-            <div class="answer-label" style="color: var(--accent-red); margin-bottom: 4px;">✗ Bạn đã chọn (${selectedLettersStr}):</div>
+            <div class="answer-label" style="color: var(--accent-red); margin-bottom: 4px;">Bạn đã chọn (${selectedLettersStr}):</div>
             <div style="font-size: 13.5px; opacity: 0.95;">${selectedItemsHtml}</div>
           </div>
         </div>
         <div class="answer-item correct-highlight">
           <div>
-            <div class="answer-label" style="color: var(--accent-green); margin-bottom: 4px;">✓ Đáp án đúng đầy đủ (${correctLettersStr}):</div>
+            <div class="answer-label" style="color: var(--accent-green); margin-bottom: 4px;">Đáp án đúng đầy đủ (${correctLettersStr}):</div>
             <div style="font-size: 13.5px; opacity: 0.95;">${correctItemsHtml}</div>
           </div>
         </div>
@@ -666,9 +894,8 @@
 
     dom.answerReview.innerHTML = reviewHtml;
 
-    // Note
     if (q.note) {
-      dom.noteBox.innerHTML = `<strong>💡 Ghi chú:</strong> ${escapeHtml(q.note)}`;
+      dom.noteBox.innerHTML = `<strong>Ghi chú:</strong> ${escapeHtml(q.note)}`;
       dom.noteBox.classList.add('visible');
     } else {
       dom.noteBox.classList.remove('visible');
@@ -686,12 +913,10 @@
     state.currentIndex++;
 
     if (state.currentIndex >= state.quizQuestions.length) {
-      // Quiz complete
       showResults(true);
       return;
     }
 
-    // Unflip card first
     dom.flashcard.classList.remove('flipped');
     dom.btnNext.classList.remove('visible');
 
@@ -702,73 +927,62 @@
 
   // ---- Show Results ----
   function showResults(shouldSave = true) {
-    const fullExamQuestions = getExamQuestions(state.currentExam);
-    const totalExamQuestions = fullExamQuestions.length;
+    const questions = state.quizQuestions;
+    const totalQuestions = questions.length;
 
-    // Count correct from state.answers
     let correctCount = 0;
     let wrongCount = 0;
     let answeredCount = 0;
 
-    fullExamQuestions.forEach(q => {
+    questions.forEach(q => {
       const a = state.answers[q.id];
       if (a) {
         answeredCount++;
-        if (a.correct) {
-          correctCount++;
-        } else {
-          wrongCount++;
-        }
+        if (a.correct) correctCount++;
+        else wrongCount++;
       }
     });
 
-    // If some questions not answered yet, count as wrong or pending
-    if (answeredCount < totalExamQuestions) {
-      wrongCount = totalExamQuestions - correctCount;
+    if (answeredCount < totalQuestions) {
+      wrongCount = totalQuestions - correctCount;
     }
 
-    const pct = Math.round((correctCount / totalExamQuestions) * 100);
+    const pct = Math.round((correctCount / totalQuestions) * 100);
 
-    // Save progress if finished full exam
     if (shouldSave && (!state.reviewMode || state.reviewMode === 'all')) {
       saveExamResult(state.currentExam, state.answers, true);
     }
 
-    // Title & emoji
-    let emoji, title, subtitle;
-    if (pct >= 90) {
-      emoji = '🏆';
-      title = `Bộ đề ${state.currentExam} — Xuất sắc!`;
-      subtitle = 'Bạn nắm rất vững kiến thức!';
-    } else if (pct >= 70) {
-      emoji = '🎉';
-      title = `Bộ đề ${state.currentExam} — Rất tốt!`;
-      subtitle = 'Cố gắng ôn lại các câu sai để đạt điểm tối đa nhé!';
-    } else if (pct >= 50) {
-      emoji = '💪';
-      title = `Bộ đề ${state.currentExam} — Khá tốt!`;
-      subtitle = 'Hãy dùng tính năng "Học lại câu sai" bên dưới!';
+    // Result Header Info
+    const sub = getSubConfig();
+    if (state.isMockExam) {
+      dom.resultTypeTag.textContent = `Đề thi thử • ${sub.code}`;
+      dom.resultTitle.textContent = `Kết quả thi thử`;
     } else {
-      emoji = '📚';
-      title = `Bộ đề ${state.currentExam} — Cần ôn tập thêm!`;
-      subtitle = 'Hãy học lại những câu sai và thử lại nhé!';
+      dom.resultTypeTag.textContent = `${sub.code} • Bộ đề ${state.currentExam}`;
+      dom.resultTitle.textContent = `Bộ đề ${state.currentExam}`;
     }
 
-    dom.resultEmoji.textContent = emoji;
-    dom.resultTitle.textContent = title;
-    dom.resultSubtitle.textContent = subtitle;
+    if (pct >= 90) {
+      dom.resultSubtitle.textContent = 'Xuất sắc! Bạn nắm rất vững kiến thức.';
+    } else if (pct >= 70) {
+      dom.resultSubtitle.textContent = 'Kết quả tốt! Hãy ôn lại các câu sai để đạt điểm tối đa.';
+    } else if (pct >= 50) {
+      dom.resultSubtitle.textContent = 'Kết quả khá. Hãy học lại những câu chưa chính xác bên dưới.';
+    } else {
+      dom.resultSubtitle.textContent = 'Cần củng cố thêm kiến thức. Hãy bấm học lại câu sai để ôn tập.';
+    }
 
-    // Score circle
+    // Score Circle
     dom.scoreNum.textContent = correctCount;
-    dom.scoreTotal.textContent = `/${totalExamQuestions}`;
+    dom.scoreTotal.textContent = `/${totalQuestions}`;
 
-    // SVG gradient
     const svgEl = dom.scoreFill.closest('svg');
     if (!svgEl.querySelector('defs')) {
       const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
       defs.innerHTML = `
         <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style="stop-color: #8b5cf6"/>
+          <stop offset="0%" style="stop-color: #7c3aed"/>
           <stop offset="50%" style="stop-color: #3b82f6"/>
           <stop offset="100%" style="stop-color: #06b6d4"/>
         </linearGradient>
@@ -778,35 +992,32 @@
 
     const circumference = 2 * Math.PI * 54;
     const offset = circumference - (pct / 100) * circumference;
-    setTimeout(() => {
-      dom.scoreFill.style.strokeDashoffset = offset;
-    }, 100);
 
-    // Stats
     dom.resultStats.innerHTML = `
       <div class="result-stat">
         <div class="result-stat-value correct-color">${correctCount}</div>
-        <div class="result-stat-label">Đúng</div>
+        <div class="result-stat-label">Số câu đúng</div>
       </div>
       <div class="result-stat">
         <div class="result-stat-value wrong-color">${wrongCount}</div>
-        <div class="result-stat-label">Sai</div>
+        <div class="result-stat-label">Số câu sai</div>
       </div>
       <div class="result-stat">
         <div class="result-stat-value percent-color">${pct}%</div>
-        <div class="result-stat-label">Tỷ lệ đúng</div>
+        <div class="result-stat-label">Tỷ lệ chính xác</div>
       </div>
     `;
 
-    // Dynamic buttons
-    dom.btnReviewWrong.textContent = `🔴 Học lại câu sai (${wrongCount})`;
+    // Buttons
+    dom.btnReviewWrongText.textContent = `Học lại câu sai (${wrongCount})`;
     dom.btnReviewWrong.disabled = (wrongCount === 0);
 
-    dom.btnReviewCorrect.textContent = `🟢 Ôn lại câu đúng (${correctCount})`;
+    dom.btnReviewCorrectText.textContent = `Ôn lại câu đúng (${correctCount})`;
     dom.btnReviewCorrect.disabled = (correctCount === 0);
 
-    // Review list
-    renderReviewList(fullExamQuestions);
+    dom.btnRestartText.textContent = state.isMockExam ? 'Làm lại đề thi này' : 'Làm lại bộ đề này';
+
+    renderReviewList(questions);
 
     showView('result');
 
@@ -814,21 +1025,22 @@
     setTimeout(() => {
       dom.scoreFill.style.strokeDashoffset = offset;
     }, 150);
-
-    if (shouldSave && pct >= 70) {
-      launchConfetti();
-    }
   }
 
-  // ---- Render Review List ----
+  // ---- Render Review List (Clean Vector Icons, No Emoji) ----
   function renderReviewList(questions) {
-    let html = '<div class="review-list-title">📋 Chi tiết từng câu hỏi trong bộ đề:</div>';
+    let html = '<div class="review-list-title">Chi tiết từng câu hỏi trong đề:</div>';
 
     questions.forEach((q) => {
       const answer = state.answers[q.id];
       const isAnswered = !!answer;
       const isCorrect = isAnswered && answer.correct;
-      const icon = !isAnswered ? '⚪' : (isCorrect ? '✅' : '❌');
+
+      const iconHtml = !isAnswered ?
+        `<span class="review-item-icon unanswered"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg></span>` :
+        (isCorrect ?
+          `<span class="review-item-icon correct"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>` :
+          `<span class="review-item-icon wrong"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>`);
 
       const correctStr = Array.isArray(q.answer) ? q.answer.join(', ') : q.answer;
       const selectedStr = isAnswered ?
@@ -838,10 +1050,10 @@
 
       html += `
         <div class="review-item" data-qid="${q.id}">
-          <span class="review-item-icon">${icon}</span>
+          ${iconHtml}
           <span class="review-item-text"><strong>Câu ${q.id}:</strong> ${escapeHtml(shortQ)}</span>
           <span class="review-item-answer ${isCorrect ? 'correct' : 'wrong'}">
-            ${isCorrect ? `Đúng (${correctStr})` : (isAnswered ? `${selectedStr} → Đúng: ${correctStr}` : `Chưa làm`)}
+            ${isCorrect ? `Đúng (${correctStr})` : (isAnswered ? `${selectedStr} → ${correctStr}` : `Chưa làm`)}
           </span>
         </div>
       `;
@@ -850,84 +1062,51 @@
     dom.reviewList.innerHTML = html;
   }
 
-  // ---- Confetti ----
-  function launchConfetti() {
-    const existing = document.getElementById('confetti-canvas');
-    if (existing) existing.remove();
-
-    const canvas = document.createElement('canvas');
-    canvas.id = 'confetti-canvas';
-    document.body.appendChild(canvas);
-    const ctx = canvas.getContext('2d');
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const particles = [];
-    const colors = ['#8b5cf6', '#3b82f6', '#06b6d4', '#10b981', '#ec4899', '#f59e0b'];
-
-    for (let i = 0; i < 90; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height * 0.5,
-        vx: (Math.random() - 0.5) * 4,
-        vy: Math.random() * 4 + 2,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        size: Math.random() * 6 + 4,
-        rotation: Math.random() * 360,
-        rotationSpeed: (Math.random() - 0.5) * 10,
-        opacity: 1,
-      });
-    }
-
-    let frame = 0;
-    const maxFrames = 120;
-
-    function animate() {
-      frame++;
-      if (frame > maxFrames) {
-        canvas.remove();
-        return;
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      particles.forEach(p => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.08;
-        p.rotation += p.rotationSpeed;
-        p.opacity = Math.max(0, 1 - frame / maxFrames);
-
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate((p.rotation * Math.PI) / 180);
-        ctx.globalAlpha = p.opacity;
-        ctx.fillStyle = p.color;
-        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
-        ctx.restore();
-      });
-
-      requestAnimationFrame(animate);
-    }
-
-    animate();
-  }
-
   // ---- Event Handlers ----
   function setupEvents() {
-    // Header Back button - Smooth back without blocking confirm!
-    dom.btnBack.addEventListener('click', goHome);
+    // Subject Selection Cards
+    $$('.subject-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const sub = card.dataset.subject;
+        selectSubject(sub);
+      });
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          const sub = card.dataset.subject;
+          selectSubject(sub);
+        }
+      });
+    });
 
-    // Quiz navbar back button
+    // Switch subject button in header
+    dom.btnSwitchSubject.addEventListener('click', goToSubjects);
+
+    // Header Back button
+    dom.btnBack.addEventListener('click', () => {
+      if (state.currentView === 'home') {
+        goToSubjects();
+      } else if (state.currentView === 'quiz' || state.currentView === 'result') {
+        goToDashboard();
+      }
+    });
+
+    // Quiz nav back button
     if (dom.btnQuizBack) {
-      dom.btnQuizBack.addEventListener('click', goHome);
+      dom.btnQuizBack.addEventListener('click', goToDashboard);
     }
 
-    // Logo click -> Home
-    dom.logoHome.addEventListener('click', goHome);
+    // Logo click -> Subjects or Dashboard
+    dom.logoHome.addEventListener('click', () => {
+      if (state.currentView !== 'subjects') {
+        goToSubjects();
+      }
+    });
 
-    // Next question button
+    // Mock exam start button
+    dom.btnMockStart.addEventListener('click', startMockExam);
+
+    // Next question
     dom.btnNext.addEventListener('click', nextQuestion);
 
     // Multi-answer confirm button
@@ -937,25 +1116,31 @@
 
     // Result view buttons
     dom.btnReviewWrong.addEventListener('click', () => {
-      // Find all questions in current exam that were wrong or not answered
-      const fullExam = getExamQuestions(state.currentExam);
-      const wrongQuestions = fullExam.filter(q => {
+      const wrongQuestions = state.quizQuestions.filter(q => {
         const a = state.answers[q.id];
         return !a || !a.correct;
       });
 
       if (wrongQuestions.length === 0) {
-        alert('Chúc mừng! Bạn không có câu sai nào trong bộ đề này!');
+        alert('Chúc mừng! Bạn không có câu sai nào trong đề này!');
         return;
       }
 
-      const wrongIds = new Set(wrongQuestions.map(q => q.id));
-      startExam(state.currentExam, 'wrong', (q) => wrongIds.has(q.id));
+      state.currentIndex = 0;
+      state.quizQuestions = wrongQuestions;
+      state.selectedMulti = [];
+      state.reviewMode = 'wrong';
+
+      dom.quizTitle.textContent = `Học lại ${wrongQuestions.length} câu sai`;
+      dom.quizModeTag.textContent = `Học câu sai`;
+      dom.quizModeTag.className = 'quiz-mode-tag visible';
+
+      showView('quiz');
+      renderQuestion();
     });
 
     dom.btnReviewCorrect.addEventListener('click', () => {
-      const fullExam = getExamQuestions(state.currentExam);
-      const correctQuestions = fullExam.filter(q => {
+      const correctQuestions = state.quizQuestions.filter(q => {
         const a = state.answers[q.id];
         return a && a.correct;
       });
@@ -965,17 +1150,35 @@
         return;
       }
 
-      const correctIds = new Set(correctQuestions.map(q => q.id));
-      startExam(state.currentExam, 'correct', (q) => correctIds.has(q.id));
+      state.currentIndex = 0;
+      state.quizQuestions = correctQuestions;
+      state.selectedMulti = [];
+      state.reviewMode = 'correct';
+
+      dom.quizTitle.textContent = `Ôn lại ${correctQuestions.length} câu đúng`;
+      dom.quizModeTag.textContent = `Ôn câu đúng`;
+      dom.quizModeTag.className = 'quiz-mode-tag visible';
+
+      showView('quiz');
+      renderQuestion();
     });
 
-    if (dom.btnRestart) {
-      dom.btnRestart.addEventListener('click', () => {
+    dom.btnRestart.addEventListener('click', () => {
+      if (state.isMockExam) {
+        // Restart this mock exam with same questions
+        state.currentIndex = 0;
+        state.answers = {};
+        state.selectedMulti = [];
+        state.reviewMode = null;
+        dom.quizTitle.textContent = `Đề thi thử ngẫu nhiên • 50 câu`;
+        showView('quiz');
+        renderQuestion();
+      } else {
         startExam(state.currentExam, null, null, true);
-      });
-    }
+      }
+    });
 
-    dom.btnResultHome.addEventListener('click', goHome);
+    dom.btnResultHome.addEventListener('click', goToDashboard);
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
@@ -998,7 +1201,6 @@
         }
       }
 
-      // Enter or Space
       if (e.key === 'Enter' || e.key === ' ') {
         if (multi && !state.isAnswered && state.selectedMulti.length > 0) {
           e.preventDefault();
@@ -1018,21 +1220,26 @@
         nextQuestion();
       }
     });
-
-    window.addEventListener('resize', () => {
-      const canvas = document.getElementById('confetti-canvas');
-      if (canvas) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      }
-    });
   }
 
   // ---- Initialize ----
   function init() {
-    renderExamGrid();
     setupEvents();
-    updateHeaderStats();
+    updateSubjectProgressCards();
+
+    // Check last subject or default to subjects view
+    let lastSub = null;
+    try {
+      lastSub = localStorage.getItem('quizlet_last_subject');
+    } catch {}
+
+    if (lastSub && SUBJECTS[lastSub]) {
+      // Still show subjects view on first load if user wanted screen 1,
+      // or start on subjects screen cleanly as requested
+      showView('subjects');
+    } else {
+      showView('subjects');
+    }
   }
 
   if (document.readyState === 'loading') {

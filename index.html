@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quizlet MLN111 — Ôn Tập Triết Học</title>
-  <meta name="description" content="598 câu hỏi trắc nghiệm Triết học MLN111 - Ôn tập hiệu quả với 12 bộ đề">
+  <title>Quizlet — Ôn Tập Lý Luận Chính Trị</title>
+  <meta name="description" content="Ôn tập trắc nghiệm và thi thử MLN111 (Triết học) & MLN122 (Kinh tế chính trị) - Hơn 1100 câu hỏi">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,37 +15,138 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-content">
-        <button id="btn-back" class="btn-back hidden" aria-label="Quay lại trang chủ">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button id="btn-back" class="btn-back hidden" aria-label="Quay lại">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
-          <span>Trang chủ</span>
+          <span id="btn-back-text">Quay lại</span>
         </button>
+
         <div class="logo" id="logo-home">
-          <span class="logo-icon">📖</span>
-          <h1>MLN111 <span class="logo-sub">Triết Học</span></h1>
+          <div class="logo-mark">LLCT</div>
+          <div class="logo-text">
+            <h1>Quizlet <span class="logo-sub" id="current-subject-label">Lý Luận Chính Trị</span></h1>
+          </div>
         </div>
-        <div class="header-stats" id="header-stats"></div>
+
+        <div class="header-actions">
+          <button id="btn-switch-subject" class="btn-switch-subject hidden" title="Đổi môn học">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6h16M4 12h16M4 18h7"/>
+            </svg>
+            <span>Đổi môn học</span>
+          </button>
+          <div class="header-stats" id="header-stats"></div>
+        </div>
       </div>
     </header>
 
     <!-- Main Content -->
     <main id="main-content">
-      <!-- Home View -->
-      <section id="view-home" class="view active">
+      <!-- Subject Selection View (Screen 1) -->
+      <section id="view-subjects" class="view active">
         <div class="hero">
-          <h2 class="hero-title">598 Câu Hỏi Trắc Nghiệm</h2>
-          <p class="hero-subtitle">Chia thành 12 bộ đề • Ôn tập hiệu quả • Lưu tiến độ tự động</p>
+          <div class="hero-badge">Hệ thống ôn luyện trắc nghiệm</div>
+          <h2 class="hero-title">Chọn Môn Học</h2>
+          <p class="hero-subtitle">Ngân hàng câu hỏi trích xuất từ đề cương chuẩn • Hỗ trợ chế độ thi thử ngẫu nhiên</p>
         </div>
+
+        <div class="subject-grid">
+          <!-- Subject Card 1: MLN111 -->
+          <div class="subject-card" data-subject="MLN111" role="button" tabindex="0">
+            <div class="subject-card-header">
+              <span class="subject-code">MLN111</span>
+              <span class="subject-tag">Triết học</span>
+            </div>
+            <h3 class="subject-name">Triết học Mác - Lênin</h3>
+            <p class="subject-desc">Toàn bộ kiến thức về thế giới quan duy vật biện chứng, phép biện chứng duy vật và chủ nghĩa duy vật lịch sử.</p>
+            <div class="subject-meta">
+              <span class="meta-item">598 câu hỏi</span>
+              <span class="meta-dot">•</span>
+              <span class="meta-item">12 bộ đề</span>
+            </div>
+            <div class="subject-progress" id="mln111-progress-box">
+              <div class="progress-bar">
+                <div class="progress-fill" id="mln111-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="progress-label" id="mln111-progress-label">Chưa làm bài nào</div>
+            </div>
+            <div class="subject-footer">
+              <span class="btn-subject-action">Bắt đầu học</span>
+            </div>
+          </div>
+
+          <!-- Subject Card 2: MLN122 -->
+          <div class="subject-card" data-subject="MLN122" role="button" tabindex="0">
+            <div class="subject-card-header">
+              <span class="subject-code">MLN122</span>
+              <span class="subject-tag">Kinh tế chính trị</span>
+            </div>
+            <h3 class="subject-name">Kinh tế chính trị Mác - Lênin</h3>
+            <p class="subject-desc">Hàng hóa, giá trị thặng dư, độc quyền, kinh tế thị trường định hướng XHCN và công nghiệp hóa - hiện đại hóa.</p>
+            <div class="subject-meta">
+              <span class="meta-item">538 câu hỏi</span>
+              <span class="meta-dot">•</span>
+              <span class="meta-item">11 bộ đề</span>
+            </div>
+            <div class="subject-progress" id="mln122-progress-box">
+              <div class="progress-bar">
+                <div class="progress-fill" id="mln122-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="progress-label" id="mln122-progress-label">Chưa làm bài nào</div>
+            </div>
+            <div class="subject-footer">
+              <span class="btn-subject-action">Bắt đầu học</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Subject Dashboard View (Screen 2: Mock Exam + Exam Grid) -->
+      <section id="view-home" class="view">
+        <div class="subject-dashboard-header">
+          <div class="dashboard-title-group">
+            <span class="dashboard-badge" id="dashboard-subject-code">MLN111</span>
+            <h2 class="dashboard-title" id="dashboard-subject-name">Triết học Mác - Lênin</h2>
+          </div>
+          <p class="dashboard-subtitle" id="dashboard-subject-stats">598 câu hỏi • 12 bộ đề</p>
+        </div>
+
+        <!-- Mock Exam Banner -->
+        <div class="mock-exam-card" id="mock-exam-card">
+          <div class="mock-exam-content">
+            <div class="mock-exam-tag">Chế độ thi thử</div>
+            <h3 class="mock-exam-title">Đề Thi Thử Ngẫu Nhiên (50 Câu)</h3>
+            <p class="mock-exam-desc">Hệ thống tự động chọn ngẫu nhiên 50 câu hỏi từ toàn bộ kho câu hỏi của môn này để mô phỏng một đề thi thật hoàn chỉnh.</p>
+            <div class="mock-exam-stats" id="mock-exam-history"></div>
+          </div>
+          <div class="mock-exam-actions">
+            <button class="btn btn-mock-start" id="btn-mock-start">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <span>Bắt đầu thi thử</span>
+            </button>
+            <div class="mock-exam-subactions" id="mock-exam-subactions"></div>
+          </div>
+        </div>
+
+        <!-- Section Title -->
+        <div class="section-header">
+          <h3 class="section-title">Danh Sách Bộ Đề Ôn Tập</h3>
+          <span class="section-count" id="exam-list-count">12 bộ đề</span>
+        </div>
+
+        <!-- Exam Grid -->
         <div class="exam-grid" id="exam-grid"></div>
       </section>
 
-      <!-- Quiz View -->
+      <!-- Quiz View (Flashcard Screen) -->
       <section id="view-quiz" class="view">
         <div class="quiz-container">
           <div class="quiz-nav-bar">
             <button id="btn-quiz-back" class="btn-quiz-back" title="Quay lại danh sách đề">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
               <span>Về danh sách đề</span>
@@ -68,17 +169,20 @@
               <!-- Front -->
               <div class="flashcard-front" id="card-front">
                 <div class="question-badge" id="question-badge"></div>
-                <p class="question-text" id="question-text"></p>
+                <div class="question-text" id="question-text"></div>
                 <div class="options-list" id="options-list"></div>
                 <div class="multi-confirm-wrapper hidden" id="multi-confirm-wrapper">
                   <button class="btn btn-confirm-multi" id="btn-confirm-multi" disabled>
-                    ✓ Xác nhận câu trả lời (<span id="multi-count">0</span> đã chọn)
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span>Xác nhận câu trả lời (<span id="multi-count">0</span> đã chọn)</span>
                   </button>
                 </div>
               </div>
               <!-- Back -->
               <div class="flashcard-back" id="card-back">
-                <div class="result-icon" id="result-icon"></div>
+                <div class="result-status-badge" id="result-status-badge"></div>
                 <p class="question-text-back" id="question-text-back"></p>
                 <div class="answer-review" id="answer-review"></div>
                 <div class="note-box" id="note-box"></div>
@@ -88,8 +192,8 @@
 
           <div class="quiz-actions" id="quiz-actions">
             <button class="btn btn-next" id="btn-next">
-              Câu tiếp theo
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <span>Câu tiếp theo</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
             </button>
@@ -102,9 +206,9 @@
         <div class="result-container" id="result-container">
           <div class="result-card">
             <div class="result-header">
-              <div class="result-emoji" id="result-emoji"></div>
-              <h2 class="result-title" id="result-title"></h2>
-              <p class="result-subtitle" id="result-subtitle"></p>
+              <span class="result-type-tag" id="result-type-tag">Kết quả ôn tập</span>
+              <h2 class="result-title" id="result-title">Bộ đề hoàn thành</h2>
+              <p class="result-subtitle" id="result-subtitle">Đánh giá kết quả làm bài của bạn</p>
             </div>
 
             <div class="score-circle-wrapper">
@@ -124,16 +228,24 @@
 
             <div class="result-buttons">
               <button class="btn btn-review-wrong" id="btn-review-wrong">
-                🔴 Học lại câu sai
+                <span class="status-dot dot-wrong"></span>
+                <span id="btn-review-wrong-text">Học lại câu sai</span>
               </button>
               <button class="btn btn-review-correct" id="btn-review-correct">
-                🟢 Ôn lại câu đúng
+                <span class="status-dot dot-correct"></span>
+                <span id="btn-review-correct-text">Ôn lại câu đúng</span>
               </button>
               <button class="btn btn-restart" id="btn-restart">
-                🔄 Làm lại bộ đề này từ đầu
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span id="btn-restart-text">Làm lại đề này</span>
               </button>
               <button class="btn btn-home" id="btn-result-home">
-                🏠 Về danh sách đề
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                <span>Về danh sách đề</span>
               </button>
             </div>
 
@@ -145,6 +257,7 @@
   </div>
 
   <script src="questions.js"></script>
+  <script src="data_mln122.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
