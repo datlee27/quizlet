@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quizlet — Ôn Tập Lý Luận Chính Trị</title>
-  <meta name="description" content="Ôn tập trắc nghiệm và thi thử MLN111 (Triết học) & MLN122 (Kinh tế chính trị) - Hơn 1100 câu hỏi">
+  <title>Quizlet — Ôn Tập Trắc Nghiệm: MLN111 • MLN122 • AET • HOD</title>
+  <meta name="description" content="Ôn tập trắc nghiệm và thi thử MLN111, MLN122, AET (Mỹ học), HOD (Lịch sử Thiết kế) - Hơn 1800 câu hỏi">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -95,6 +95,52 @@
               <span class="btn-subject-action">Bắt đầu học</span>
             </div>
           </div>
+
+          <!-- Subject Card 3: AET -->
+          <div class="subject-card" data-subject="AET" role="button" tabindex="0">
+            <div class="subject-card-header">
+              <span class="subject-code">AET</span>
+              <span class="subject-tag">Mỹ học</span>
+            </div>
+            <h3 class="subject-name">Aesthetics & Art Theory</h3>
+            <div class="subject-meta">
+              <span class="meta-item">234 câu hỏi</span>
+              <span class="meta-dot">•</span>
+              <span class="meta-item">5 bộ đề</span>
+            </div>
+            <div class="subject-progress" id="aet-progress-box">
+              <div class="progress-bar">
+                <div class="progress-fill" id="aet-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="progress-label" id="aet-progress-label">Chưa làm bài nào</div>
+            </div>
+            <div class="subject-footer">
+              <span class="btn-subject-action">Bắt đầu học</span>
+            </div>
+          </div>
+
+          <!-- Subject Card 4: HOD -->
+          <div class="subject-card" data-subject="HOD" role="button" tabindex="0">
+            <div class="subject-card-header">
+              <span class="subject-code">HOD</span>
+              <span class="subject-tag">Lịch sử Thiết kế</span>
+            </div>
+            <h3 class="subject-name">History of Design</h3>
+            <div class="subject-meta">
+              <span class="meta-item">467 câu hỏi</span>
+              <span class="meta-dot">•</span>
+              <span class="meta-item">10 bộ đề</span>
+            </div>
+            <div class="subject-progress" id="hod-progress-box">
+              <div class="progress-bar">
+                <div class="progress-fill" id="hod-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="progress-label" id="hod-progress-label">Chưa làm bài nào</div>
+            </div>
+            <div class="subject-footer">
+              <span class="btn-subject-action">Bắt đầu học</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -133,12 +179,20 @@
             <div class="mock-start-info">
               <h3 class="mock-start-title">Tạo Đề Thi Thử Mới</h3>
               <p class="mock-start-desc">Hệ thống tự động chọn ngẫu nhiên 50 câu hỏi từ toàn bộ ngân hàng câu hỏi của môn này.</p>
+              <div class="mock-duration-picker">
+                <span class="duration-label">Thời gian thi:</span>
+                <div class="duration-options" id="duration-options">
+                  <button type="button" class="btn-duration" data-minutes="30">30 phút (Tryhard)</button>
+                  <button type="button" class="btn-duration active" data-minutes="45">45 phút (Tiêu chuẩn)</button>
+                  <button type="button" class="btn-duration" data-minutes="50">50 phút (Thoải mái)</button>
+                </div>
+              </div>
             </div>
             <button class="btn btn-mock-start" id="btn-mock-start">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="5 3 19 12 5 21 5 3"/>
               </svg>
-              <span>Tạo đề mới</span>
+              <span>Bắt đầu thi thử</span>
             </button>
           </div>
 
@@ -156,6 +210,13 @@
           <div class="quiz-progress">
             <div class="progress-info">
               <span id="quiz-title" class="quiz-title"></span>
+              <div id="quiz-timer" class="quiz-timer hidden" title="Thời gian còn lại">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span id="timer-text">45:00</span>
+              </div>
               <span id="quiz-counter" class="quiz-counter"></span>
             </div>
             <div class="progress-bar">
@@ -190,6 +251,13 @@
           </div>
 
           <div class="quiz-actions" id="quiz-actions">
+            <button class="btn btn-finish-mock hidden" id="btn-finish-mock" title="Nộp bài và kết thúc thi thử">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
+              <span>Nộp bài sớm</span>
+            </button>
             <button class="btn btn-next" id="btn-next">
               <span>Câu tiếp theo</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -263,6 +331,8 @@
 
   <script src="questions.js"></script>
   <script src="data_mln122.js"></script>
-  <script src="app.js?v=2"></script>
+  <script src="data_aet.js"></script>
+  <script src="data_hod.js"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

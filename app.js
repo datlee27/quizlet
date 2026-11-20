@@ -24,6 +24,24 @@
       storageKey: 'mln122_quizlet_progress_v2',
       mockStorageKey: 'mln122_mock_exam_progress_v2',
       questionsPerExam: 50,
+    },
+    AET: {
+      code: 'AET',
+      name: 'Aesthetics & Art Theory',
+      shortName: 'Mỹ học & Nghệ thuật',
+      getQuestions: () => (typeof AET_QUESTIONS !== 'undefined' ? AET_QUESTIONS : []),
+      storageKey: 'aet_quizlet_progress_v2',
+      mockStorageKey: 'aet_mock_exam_progress_v2',
+      questionsPerExam: 50,
+    },
+    HOD: {
+      code: 'HOD',
+      name: 'History of Design',
+      shortName: 'Lịch sử Thiết kế',
+      getQuestions: () => (typeof HOD_QUESTIONS !== 'undefined' ? HOD_QUESTIONS : []),
+      storageKey: 'hod_quizlet_progress_v2',
+      mockStorageKey: 'hod_mock_exam_progress_v2',
+      questionsPerExam: 50,
     }
   };
 
@@ -37,7 +55,7 @@
 
   // ---- State ----
   let state = {
-    currentSubject: null,    // null | 'MLN111' | 'MLN122'
+    currentSubject: null,    // null | 'MLN111' | 'MLN122' | 'AET' | 'HOD'
     currentView: 'subjects', // 'subjects' | 'home' | 'quiz' | 'result'
     activeTab: 'exams',       // 'exams' | 'mock'
     currentExam: null,       // number (1-12) or 'MOCK'
@@ -50,6 +68,12 @@
     isFlipped: false,
     isAnswered: false,
     reviewMode: null,        // null | 'wrong' | 'correct' | 'all'
+    mockDurationMinutes: 45, // default 45 mins
+    timerSecondsLeft: 0,
+    timerTotalSeconds: 0,
+    timerInterval: null,
+    examStartTime: null,
+    timeSpentStr: '',
   };
 
   // ---- DOM Cache ----
@@ -93,6 +117,8 @@
 
     quizTitle: $('#quiz-title'),
     quizCounter: $('#quiz-counter'),
+    quizTimer: $('#quiz-timer'),
+    timerText: $('#timer-text'),
     progressFill: $('#progress-fill'),
     flashcard: $('#flashcard'),
     cardFront: $('#card-front'),
@@ -108,6 +134,8 @@
     answerReview: $('#answer-review'),
     noteBox: $('#note-box'),
     btnNext: $('#btn-next'),
+    btnFinishMock: $('#btn-finish-mock'),
+    durationOptions: $('#duration-options'),
 
     resultTypeTag: $('#result-type-tag'),
     resultTitle: $('#result-title'),
@@ -360,6 +388,7 @@
   }
 
   function goToSubjects() {
+    stopExamTimer();
     state.currentExam = null;
     state.isMockExam = false;
     state.reviewMode = null;
@@ -368,6 +397,7 @@
   }
 
   function goToDashboard() {
+    stopExamTimer();
     if (state.currentView === 'quiz' && state.currentExam && (!state.reviewMode || state.reviewMode === 'all')) {
       if (Object.keys(state.answers).length > 0) {
         saveExamResult(state.currentExam, state.answers, false);
@@ -404,25 +434,21 @@
   }
 
   function updateSubjectProgressCards() {
-    // MLN111
-    const p111 = loadSubjectProgress('MLN111');
-    const total111Exams = getSubjectExamCount('MLN111');
-    const completed111 = Object.values(p111).filter(p => p.answers && Object.keys(p.answers).length > 0).length;
-    const pct111 = Math.round((completed111 / total111Exams) * 100);
-    dom.mln111ProgressFill.style.width = `${pct111}%`;
-    dom.mln111ProgressLabel.innerHTML = completed111 > 0 ?
-      `<span>Đã học ${completed111}/${total111Exams} bộ đề</span><span>${pct111}%</span>` :
-      `<span>Chưa làm bài nào</span><span>0%</span>`;
+    Object.keys(SUBJECTS).forEach(subCode => {
+      const codeLower = subCode.toLowerCase();
+      const fillEl = $(`#${codeLower}-progress-fill`);
+      const labelEl = $(`#${codeLower}-progress-label`);
+      if (!fillEl || !labelEl) return;
 
-    // MLN122
-    const p122 = loadSubjectProgress('MLN122');
-    const total122Exams = getSubjectExamCount('MLN122');
-    const completed122 = Object.values(p122).filter(p => p.answers && Object.keys(p.answers).length > 0).length;
-    const pct122 = Math.round((completed122 / total122Exams) * 100);
-    dom.mln122ProgressFill.style.width = `${pct122}%`;
-    dom.mln122ProgressLabel.innerHTML = completed122 > 0 ?
-      `<span>Đã học ${completed122}/${total122Exams} bộ đề</span><span>${pct122}%</span>` :
-      `<span>Chưa làm bài nào</span><span>0%</span>`;
+      const p = loadSubjectProgress(subCode);
+      const totalExams = getSubjectExamCount(subCode);
+      const completed = Object.values(p).filter(item => item.answers && Object.keys(item.answers).length > 0).length;
+      const pct = totalExams > 0 ? Math.round((completed / totalExams) * 100) : 0;
+      fillEl.style.width = `${pct}%`;
+      labelEl.innerHTML = completed > 0 ?
+        `<span>Đã học ${completed}/${totalExams} bộ đề</span><span>${pct}%</span>` :
+        `<span>Chưa làm bài nào</span><span>0%</span>`;
+    });
   }
 
   // ---- Subject Dashboard (Screen 2) ----
@@ -669,6 +695,73 @@
     `;
   }
 
+  // ---- Exam Timer (Thi Thử) ----
+  function startExamTimer(durationMinutes) {
+    stopExamTimer();
+    const totalSeconds = durationMinutes * 60;
+    state.timerTotalSeconds = totalSeconds;
+    state.timerSecondsLeft = totalSeconds;
+    state.examStartTime = Date.now();
+
+    if (dom.quizTimer) {
+      dom.quizTimer.classList.remove('hidden', 'warning', 'danger');
+    }
+    if (dom.btnFinishMock) {
+      dom.btnFinishMock.classList.remove('hidden');
+    }
+
+    updateTimerDisplay();
+
+    state.timerInterval = setInterval(() => {
+      state.timerSecondsLeft--;
+      updateTimerDisplay();
+
+      if (state.timerSecondsLeft <= 0) {
+        stopExamTimer();
+        handleTimerExpired();
+      }
+    }, 1000);
+  }
+
+  function stopExamTimer() {
+    if (state.timerInterval) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+    if (dom.quizTimer) {
+      dom.quizTimer.classList.add('hidden');
+      dom.quizTimer.classList.remove('warning', 'danger');
+    }
+    if (dom.btnFinishMock) {
+      dom.btnFinishMock.classList.add('hidden');
+    }
+  }
+
+  function updateTimerDisplay() {
+    if (!dom.timerText) return;
+    const sec = Math.max(0, state.timerSecondsLeft);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    dom.timerText.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+    if (dom.quizTimer) {
+      if (sec <= 60) {
+        dom.quizTimer.classList.remove('warning');
+        dom.quizTimer.classList.add('danger');
+      } else if (sec <= 300) {
+        dom.quizTimer.classList.remove('danger');
+        dom.quizTimer.classList.add('warning');
+      } else {
+        dom.quizTimer.classList.remove('warning', 'danger');
+      }
+    }
+  }
+
+  function handleTimerExpired() {
+    alert('ĐÃ HẾT GIỜ LÀM BÀI!\nHệ thống tự động nộp bài và tổng kết điểm của bạn.');
+    showResults(true);
+  }
+
   // ---- Mock Exam Generation & Management ----
   function startMockExam() {
     const sub = getSubConfig();
@@ -677,6 +770,8 @@
       alert('Không có câu hỏi nào để tạo đề thi!');
       return;
     }
+
+    const durationMins = state.mockDurationMinutes || 45;
 
     // Pick 50 random distinct questions
     const shuffled = shuffle(all);
@@ -690,6 +785,7 @@
       id: mockId,
       examNumber: nextNum,
       title: `Đề thi thử #${nextNum}`,
+      durationMinutes: durationMins,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       questions: mockQuestions,
@@ -711,14 +807,18 @@
     state.answers = {};
     state.selectedMulti = [];
     state.reviewMode = null;
+    state.examStartTime = Date.now();
 
-    dom.quizTitle.textContent = `${newMock.title} • 50 câu`;
+    dom.quizTitle.textContent = `${newMock.title} • 50 câu (${durationMins}p)`;
+
+    startExamTimer(durationMins);
 
     showView('quiz');
     renderQuestion();
   }
 
   function showMockResultById(mockId) {
+    stopExamTimer();
     const mock = getMockExamById(mockId);
     if (!mock || !mock.questions) return;
 
@@ -733,6 +833,7 @@
   }
 
   function startMockReviewWrongById(mockId) {
+    stopExamTimer();
     const mock = getMockExamById(mockId);
     if (!mock || !mock.questions) return;
 
@@ -765,6 +866,8 @@
     const mock = getMockExamById(mockId);
     if (!mock || !mock.questions) return;
 
+    const durationMins = mock.durationMinutes || state.mockDurationMinutes || 45;
+
     state.isMockExam = true;
     state.currentMockId = mock.id;
     state.currentExam = 'MOCK';
@@ -773,6 +876,7 @@
     state.answers = {};
     state.selectedMulti = [];
     state.reviewMode = null;
+    state.examStartTime = Date.now();
 
     // Reset saved answers for this mock in localStorage
     const sub = getSubConfig();
@@ -786,7 +890,9 @@
       saveMockExams(mocks, sub.code);
     }
 
-    dom.quizTitle.textContent = `${mock.title} • 50 câu`;
+    dom.quizTitle.textContent = `${mock.title} • 50 câu (${durationMins}p)`;
+
+    startExamTimer(durationMins);
 
     showView('quiz');
     renderQuestion();
@@ -826,6 +932,7 @@
 
   // ---- Start Standard Exam ----
   function startExam(examNum, mode = null, filterFn = null, isFresh = false) {
+    stopExamTimer();
     state.isMockExam = false;
     state.currentExam = examNum;
     state.currentIndex = 0;
@@ -1189,6 +1296,17 @@
 
   // ---- Show Results ----
   function showResults(shouldSave = true) {
+    stopExamTimer();
+
+    if (state.isMockExam && state.examStartTime) {
+      const elapsedSec = Math.max(1, Math.round((Date.now() - state.examStartTime) / 1000));
+      const em = Math.floor(elapsedSec / 60);
+      const es = elapsedSec % 60;
+      state.timeSpentStr = em > 0 ? `${em}p ${es}s` : `${es}s`;
+    } else {
+      state.timeSpentStr = '';
+    }
+
     const questions = state.quizQuestions;
     const totalQuestions = questions.length;
 
@@ -1272,6 +1390,11 @@
         <div class="result-stat-value percent-color">${pct}%</div>
         <div class="result-stat-label">Tỷ lệ chính xác</div>
       </div>
+      ${state.isMockExam && state.timeSpentStr ? `
+      <div class="result-stat">
+        <div class="result-stat-value" style="color: #c4b5fd;">${state.timeSpentStr}</div>
+        <div class="result-stat-label">Thời gian làm bài</div>
+      </div>` : ''}
     `;
 
     // Buttons
@@ -1376,6 +1499,29 @@
 
     // Mock exam start button
     dom.btnMockStart.addEventListener('click', startMockExam);
+
+    // Duration picker buttons
+    $$('.btn-duration').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $$('.btn-duration').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const mins = parseInt(btn.dataset.minutes, 10);
+        if (mins) {
+          state.mockDurationMinutes = mins;
+        }
+      });
+    });
+
+    // Finish mock exam early button
+    if (dom.btnFinishMock) {
+      dom.btnFinishMock.addEventListener('click', () => {
+        const answered = Object.keys(state.answers).length;
+        const total = state.quizQuestions.length;
+        if (confirm(`Bạn đã trả lời ${answered}/${total} câu hỏi.\nBạn có chắc chắn muốn nộp bài sớm không?`)) {
+          showResults(true);
+        }
+      });
+    }
 
     // Next question
     dom.btnNext.addEventListener('click', nextQuestion);
