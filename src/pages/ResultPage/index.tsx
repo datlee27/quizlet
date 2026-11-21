@@ -13,7 +13,7 @@ import {
   Center,
 } from '@chakra-ui/react';
 import { useParams, useNavigate } from 'react-router-dom';
-import CelebrationModal, { fireCelebrationConfetti } from '@components/CelebrationModal';
+import { fireCelebrationConfetti } from '@utils/confetti';
 import { quizService } from '@services/quizService';
 import { progressService } from '@services/progressService';
 import { IQuestion, ISubject, IMockExam, IUserAnswer } from '@interfaces/quiz.interface';
@@ -39,7 +39,6 @@ export const ResultPage: React.FC = () => {
   const [answers, setAnswers] = useState<Record<number, IUserAnswer>>({});
   const [mockData, setMockData] = useState<IMockExam | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isCelebrationOpen, setIsCelebrationOpen] = useState<boolean>(true);
 
   useEffect(() => {
     const loadResult = async () => {
@@ -76,14 +75,14 @@ export const ResultPage: React.FC = () => {
       setAnswers(ansMap);
       setLoading(false);
 
-      // Trigger Olympia Celebration Confetti for ALL completed exams/mock tests
-      setIsCelebrationOpen(true);
+      // Trigger Olympia Celebration Confetti directly on screen when completing exam
+      playSfx('complete');
       fireCelebrationConfetti();
       setTimeout(() => fireCelebrationConfetti(), 600);
     };
 
     loadResult();
-  }, [code, examNumber, mockId, isMock, navigate]);
+  }, [code, examNumber, mockId, isMock, navigate, playSfx]);
 
   if (!subject) return null;
 
@@ -159,47 +158,26 @@ export const ResultPage: React.FC = () => {
             <Text color="rgba(255, 255, 255, 0.8)" fontSize="15px" mb="12px">
               {subtitle}
             </Text>
-            <HStack spacing="10px">
-              <Button
-                size="sm"
-                h="36px"
-                px="16px"
-                bg="linear-gradient(103.24deg, #98FD1D 0%, #76db00 100%)"
-                color="#183581"
-                borderRadius="10px"
-                fontWeight={900}
-                fontSize="13px"
-                fontFamily="'Nunito', sans-serif"
-                onClick={() => {
-                  playSfx('click');
-                  fireCelebrationConfetti();
-                }}
-                _hover={{ filter: 'brightness(1.1)', transform: 'translateY(-1px)' }}
-                _active={{ transform: 'scale(0.98)' }}
-                boxShadow="0 2px 10px rgba(152, 253, 29, 0.35)"
-              >
-                🎉 Bắn pháo giấy
-              </Button>
-              <Button
-                size="sm"
-                h="36px"
-                px="14px"
-                bg="rgba(159, 115, 255, 0.25)"
-                color="#D8C4FF"
-                border="1px solid rgba(159, 115, 255, 0.45)"
-                borderRadius="10px"
-                fontWeight={800}
-                fontSize="13px"
-                fontFamily="'Nunito', sans-serif"
-                onClick={() => {
-                  playSfx('click');
-                  setIsCelebrationOpen(true);
-                }}
-                _hover={{ bg: 'rgba(159, 115, 255, 0.4)', color: 'white' }}
-              >
-                🏆 Xem lại banner chúc mừng
-              </Button>
-            </HStack>
+            <Button
+              size="sm"
+              h="36px"
+              px="18px"
+              bg="linear-gradient(103.24deg, #98FD1D 0%, #76db00 100%)"
+              color="#183581"
+              borderRadius="10px"
+              fontWeight={900}
+              fontSize="13px"
+              fontFamily="'Nunito', sans-serif"
+              onClick={() => {
+                playSfx('click');
+                fireCelebrationConfetti();
+              }}
+              _hover={{ filter: 'brightness(1.1)', transform: 'translateY(-1px)' }}
+              _active={{ transform: 'scale(0.98)' }}
+              boxShadow="0 2px 10px rgba(152, 253, 29, 0.35)"
+            >
+              🎉 Bắn pháo giấy
+            </Button>
           </Center>
 
           {/* SVG Score Circle */}
@@ -432,15 +410,6 @@ export const ResultPage: React.FC = () => {
           </VStack>
         </Box>
       </Container>
-
-      {/* Olympia Celebration Modal & Confetti Popup */}
-      <CelebrationModal
-        isOpen={isCelebrationOpen}
-        onClose={() => setIsCelebrationOpen(false)}
-        title={isMock ? 'CHÚC MỪNG HOÀN THÀNH ĐỀ THI THỬ' : 'CHÚC MỪNG BẠN HOÀN THÀNH BÀI THI'}
-        scoreText={`Đạt ${correctCount}/${totalQuestions} câu (${pct}%)`}
-        subtitle={`${subject.name} (${subject.code})`}
-      />
     </Box>
   );
 };
