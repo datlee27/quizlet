@@ -73,15 +73,33 @@ export const QuizPage: React.FC = () => {
           return;
         }
         setMockExamData(mock);
-        qList = mock.questions;
         savedAnswers = mock.answers || {};
 
-        // Setup timer
-        const durationMins = mock.durationMinutes || 45;
-        const totalSec = durationMins * 60;
-        setTimerTotal(totalSec);
-        setSecondsLeft(totalSec);
-        startTimeRef.current = Date.now();
+        if (mode === 'wrong') {
+          qList = mock.questions.filter((q) => {
+            const a = savedAnswers[q.id];
+            return !a || !a.correct;
+          });
+        } else if (mode === 'correct') {
+          qList = mock.questions.filter((q) => {
+            const a = savedAnswers[q.id];
+            return a && a.correct;
+          });
+        } else {
+          qList = mock.questions;
+        }
+
+        // Setup timer (chỉ chạy timer khi làm bài đầy đủ, không chạy khi ôn lại câu sai/đúng)
+        if (!mode) {
+          const durationMins = mock.durationMinutes || 45;
+          const totalSec = durationMins * 60;
+          setTimerTotal(totalSec);
+          setSecondsLeft(totalSec);
+          startTimeRef.current = Date.now();
+        } else {
+          setTimerTotal(0);
+          setSecondsLeft(0);
+        }
       } else {
         const allExamQuestions = await quizService.getExamQuestions(code, examNumber);
         const prog = await progressService.getSubjectProgress(code);

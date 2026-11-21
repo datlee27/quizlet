@@ -267,7 +267,11 @@ export const ResultPage: React.FC = () => {
                 isDisabled={wrongCount === 0}
                 onClick={() => {
                   playSfx('click');
-                  navigate(`/quiz/${subject.code}/exam/${examNumber}?mode=wrong`);
+                  if (isMock && mockData) {
+                    navigate(`/quiz/${subject.code}/mock/${mockData.id}?mode=wrong`);
+                  } else {
+                    navigate(`/quiz/${subject.code}/exam/${examNumber}?mode=wrong`);
+                  }
                 }}
                 _hover={{ bg: 'rgba(255, 66, 73, 0.35)', color: 'white' }}
               >
@@ -286,7 +290,11 @@ export const ResultPage: React.FC = () => {
                 isDisabled={correctCount === 0}
                 onClick={() => {
                   playSfx('click');
-                  navigate(`/quiz/${subject.code}/exam/${examNumber}?mode=correct`);
+                  if (isMock && mockData) {
+                    navigate(`/quiz/${subject.code}/mock/${mockData.id}?mode=correct`);
+                  } else {
+                    navigate(`/quiz/${subject.code}/exam/${examNumber}?mode=correct`);
+                  }
                 }}
                 _hover={{ bg: 'rgba(152, 253, 29, 0.35)', color: 'white' }}
               >

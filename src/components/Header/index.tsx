@@ -7,13 +7,19 @@ import {
   Image,
   Text,
   Badge,
-  useBreakpointValue,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuDivider,
+  Portal,
 } from '@chakra-ui/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSound } from '@contexts/sound-context';
+import { SUBJECTS_CONFIG } from '../../data';
 import logo from '@assets/images/logo.png';
 import IcSetting from '@assets/svgs/ic-setting';
-import { FiArrowLeft, FiGrid } from 'react-icons/fi';
+import { FiArrowLeft, FiGrid, FiChevronDown, FiBookOpen } from 'react-icons/fi';
 
 interface HeaderProps {
   onOpenSettings: () => void;
@@ -31,7 +37,6 @@ export const Header: React.FC<HeaderProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { playSfx } = useSound();
-  const isMobile = useBreakpointValue({ base: true, md: false });
 
   const isHome = location.pathname === '/';
 
@@ -49,6 +54,11 @@ export const Header: React.FC<HeaderProps> = ({
     navigate('/');
   };
 
+  const handleSwitchSubject = (code: string) => {
+    playSfx('click');
+    navigate(`/subject/${code}`);
+  };
+
   return (
     <Box
       as="header"
@@ -62,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
       py="12px"
     >
       <Flex maxW="1280px" mx="auto" align="center" justify="space-between">
-        {/* Left: Back button or Logo */}
+        {/* Left: Back button and Logo */}
         <HStack spacing="14px">
           {!isHome && (
             <Button
@@ -99,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
           </HStack>
         </HStack>
 
-        {/* Right: Actions, Stats, Settings */}
+        {/* Right: Actions, Stats, Quick Switcher, Settings */}
         <HStack spacing={{ base: '8px', md: '14px' }}>
           {headerStats && (
             <Badge
@@ -117,20 +127,73 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           {!isHome && (
-            <Button
-              size="sm"
-              leftIcon={<FiGrid />}
-              onClick={handleGoHome}
-              bg="rgba(255, 255, 255, 0.1)"
-              color="white"
-              borderRadius="10px"
-              fontSize="13px"
-              fontWeight={700}
-              _hover={{ bg: 'rgba(255, 255, 255, 0.2)' }}
-              display={{ base: 'none', sm: 'inline-flex' }}
-            >
-              Đổi môn học
-            </Button>
+            <Menu>
+              <MenuButton
+                as={Button}
+                size="sm"
+                leftIcon={<FiGrid />}
+                rightIcon={<FiChevronDown />}
+                bg="rgba(255, 255, 255, 0.1)"
+                color="white"
+                borderRadius="10px"
+                fontSize="13px"
+                fontWeight={700}
+                _hover={{ bg: 'rgba(255, 255, 255, 0.2)' }}
+                _active={{ bg: 'rgba(255, 255, 255, 0.25)' }}
+                display={{ base: 'none', sm: 'inline-flex' }}
+              >
+                Đổi môn học
+              </MenuButton>
+              <Portal>
+                <MenuList
+                  bg="#283191"
+                  borderColor="rgba(255, 255, 255, 0.18)"
+                  borderRadius="14px"
+                  boxShadow="0 14px 36px rgba(0, 0, 0, 0.5)"
+                  p="8px"
+                  zIndex={200}
+                >
+                  {SUBJECTS_CONFIG.map((s) => (
+                    <MenuItem
+                      key={s.code}
+                      onClick={() => handleSwitchSubject(s.code)}
+                      bg="transparent"
+                      color="white"
+                      borderRadius="8px"
+                      py="8px"
+                      px="12px"
+                      _hover={{ bg: 'rgba(159, 115, 255, 0.3)' }}
+                    >
+                      <HStack spacing="10px">
+                        <Badge bg="#FFEE58" color="#183581" fontSize="11px" fontWeight={900}>
+                          {s.code}
+                        </Badge>
+                        <Text fontSize="13px" fontWeight={700}>
+                          {s.name}
+                        </Text>
+                      </HStack>
+                    </MenuItem>
+                  ))}
+                  <MenuDivider borderColor="rgba(255, 255, 255, 0.15)" />
+                  <MenuItem
+                    onClick={handleGoHome}
+                    bg="transparent"
+                    color="#D8C4FF"
+                    borderRadius="8px"
+                    py="8px"
+                    px="12px"
+                    _hover={{ bg: 'rgba(159, 115, 255, 0.3)' }}
+                  >
+                    <HStack spacing="8px">
+                      <FiBookOpen size={14} />
+                      <Text fontSize="13px" fontWeight={800}>
+                        Xem tất cả môn học
+                      </Text>
+                    </HStack>
+                  </MenuItem>
+                </MenuList>
+              </Portal>
+            </Menu>
           )}
 
           {/* Settings Button */}
