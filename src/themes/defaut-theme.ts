@@ -89,7 +89,7 @@ const fonts = {
 };
 
 const ButtonStyle = {
-  width: "100%",
+  width: "auto",
   height: "4.8rem",
   fontFamily: `"Nunito", sans-serif`,
   fontSize: "1.6rem",

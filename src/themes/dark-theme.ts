@@ -58,7 +58,7 @@ const fonts = {
 };
 
 const ButtonStyle = {
-  width: "100%",
+  width: "auto",
   height: "4.8rem",
   fontFamily: "Outfit",
   fontSize: "1.6rem",

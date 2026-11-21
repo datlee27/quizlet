@@ -9,6 +9,7 @@ import {
   VStack,
   SimpleGrid,
   Button,
+  IconButton,
   Tabs,
   TabList,
   TabPanels,
@@ -16,6 +17,13 @@ import {
   TabPanel,
   Progress,
   Flex,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverBody,
+  PopoverArrow,
+  PopoverCloseButton,
+  Portal,
   useToast,
 } from '@chakra-ui/react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -24,7 +32,7 @@ import { progressService } from '@services/progressService';
 import { ISubject, ISubjectProgress, IMockExam } from '@interfaces/quiz.interface';
 import { useSound } from '@contexts/sound-context';
 import bgMain from '@assets/images/bg-main.png';
-import { FiPlay, FiRotateCcw, FiEye, FiTrash2, FiClock, FiAlertCircle } from 'react-icons/fi';
+import { FiPlay, FiRotateCcw, FiEye, FiTrash2, FiClock, FiAlertCircle, FiInfo } from 'react-icons/fi';
 
 export const SubjectDashboardPage: React.FC = () => {
   const { code } = useParams<{ code: string }>();
@@ -355,68 +363,139 @@ export const SubjectDashboardPage: React.FC = () => {
                 bg="linear-gradient(135deg, rgba(159, 115, 255, 0.2) 0%, rgba(40, 49, 145, 0.9) 100%)"
                 border="1px solid rgba(159, 115, 255, 0.4)"
                 borderRadius="20px"
-                p={{ base: '22px', md: '30px' }}
+                p={{ base: '20px', md: '28px' }}
                 mb="32px"
               >
-                <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'flex-start', md: 'center' }} gap="20px">
-                  <VStack align="flex-start" spacing="8px" flex={1}>
+                {/* Header: Title and Note / Mobile Info Popup */}
+                <Flex justify="space-between" align="center" mb={{ base: '14px', md: '8px' }}>
+                  <HStack spacing="10px">
                     <Heading fontSize={{ base: '18px', md: '22px' }} fontWeight={900} color="white">
                       Tạo Đề Thi Thử Mới
                     </Heading>
-                    <Text fontSize="14px" color="rgba(255, 255, 255, 0.8)">
-                      Hệ thống tự động chọn ngẫu nhiên 50 câu hỏi từ toàn bộ ngân hàng câu hỏi của môn này.
+
+                    {/* Info Icon with Popover for Mobile */}
+                    <Popover placement="bottom-start" closeOnBlur={true}>
+                      <PopoverTrigger>
+                        <IconButton
+                          aria-label="Thông tin cấu trúc đề thi"
+                          icon={<FiInfo size={16} strokeWidth={2.8} />}
+                          size="xs"
+                          w="24px"
+                          h="24px"
+                          minW="24px"
+                          borderRadius="full"
+                          bg="rgba(159, 115, 255, 0.3)"
+                          color="#FFEE58"
+                          border="1px solid rgba(159, 115, 255, 0.6)"
+                          _hover={{ bg: 'rgba(159, 115, 255, 0.5)', transform: 'scale(1.08)' }}
+                          _active={{ transform: 'scale(0.95)' }}
+                          display={{ base: 'inline-flex', md: 'none' }}
+                          title="Xem ghi chú tạo đề"
+                        />
+                      </PopoverTrigger>
+                      <Portal>
+                        <PopoverContent
+                          bg="#283191"
+                          borderColor="rgba(159, 115, 255, 0.6)"
+                          borderRadius="14px"
+                          boxShadow="0 14px 36px rgba(0, 0, 0, 0.6)"
+                          p="14px 16px"
+                          maxW="310px"
+                          color="white"
+                          zIndex={300}
+                          _focus={{ outline: 'none' }}
+                        >
+                          <PopoverArrow bg="#283191" />
+                          <PopoverCloseButton color="white" size="sm" mt="4px" mr="4px" />
+                          <PopoverBody p={0} pr="18px">
+                            <Text fontSize="13px" fontWeight={600} lineHeight={1.5} color="rgba(255, 255, 255, 0.95)">
+                              💡 Hệ thống tự động chọn ngẫu nhiên 50 câu hỏi từ toàn bộ ngân hàng câu hỏi của môn này.
+                            </Text>
+                          </PopoverBody>
+                        </PopoverContent>
+                      </Portal>
+                    </Popover>
+                  </HStack>
+                </Flex>
+
+                {/* Subtitle description on Desktop */}
+                <Text
+                  display={{ base: 'none', md: 'block' }}
+                  fontSize="14px"
+                  color="rgba(255, 255, 255, 0.8)"
+                  mb="22px"
+                >
+                  Hệ thống tự động chọn ngẫu nhiên 50 câu hỏi từ toàn bộ ngân hàng câu hỏi của môn này.
+                </Text>
+
+                {/* Controls: Horizontal layout with duration buttons and action button */}
+                <Flex
+                  direction={{ base: 'column', md: 'row' }}
+                  justify="space-between"
+                  align={{ base: 'stretch', md: 'center' }}
+                  gap="18px"
+                  wrap="wrap"
+                >
+                  {/* Duration Picker - Arranged horizontally */}
+                  <HStack spacing="12px" align="center" wrap="wrap">
+                    <Text fontSize="13.5px" fontWeight={800} color="rgba(255, 255, 255, 0.9)" flexShrink={0}>
+                      Thời gian thi:
                     </Text>
+                    <HStack spacing={{ base: '8px', sm: '10px' }} wrap="wrap">
+                      {[
+                        { minutes: 30, label: '30 phút (Tryhard)' },
+                        { minutes: 45, label: '45 phút (Tiêu chuẩn)' },
+                        { minutes: 50, label: '50 phút (Thoải mái)' },
+                      ].map((d) => (
+                        <Button
+                          key={d.minutes}
+                          w="auto"
+                          flex="none"
+                          whiteSpace="nowrap"
+                          h="38px"
+                          px="16px"
+                          borderRadius="12px"
+                          fontFamily="'Nunito', sans-serif"
+                          fontWeight={800}
+                          fontSize="13px"
+                          bg={selectedDuration === d.minutes ? '#8954FF' : 'rgba(255, 255, 255, 0.1)'}
+                          color="white"
+                          border="1px solid"
+                          borderColor={selectedDuration === d.minutes ? '#B088FF' : 'rgba(255, 255, 255, 0.2)'}
+                          boxShadow={selectedDuration === d.minutes ? '0 0 14px rgba(137, 84, 255, 0.45)' : 'none'}
+                          onClick={() => {
+                            playSfx('click');
+                            setSelectedDuration(d.minutes);
+                          }}
+                          _hover={{
+                            bg: selectedDuration === d.minutes ? '#8954FF' : 'rgba(255, 255, 255, 0.2)',
+                          }}
+                        >
+                          {d.label}
+                        </Button>
+                      ))}
+                    </HStack>
+                  </HStack>
 
-                    {/* Duration Picker (No emojis as requested) */}
-                    <Box pt="10px">
-                      <Text fontSize="13px" fontWeight={800} color="rgba(255, 255, 255, 0.9)" mb="8px">
-                        Thời gian thi:
-                      </Text>
-                      <HStack spacing="10px" wrap="wrap">
-                        {[
-                          { minutes: 30, label: '30 phút (Tryhard)' },
-                          { minutes: 45, label: '45 phút (Tiêu chuẩn)' },
-                          { minutes: 50, label: '50 phút (Thoải mái)' },
-                        ].map((d) => (
-                          <Button
-                            key={d.minutes}
-                            size="sm"
-                            borderRadius="20px"
-                            fontWeight={700}
-                            fontSize="13px"
-                            bg={selectedDuration === d.minutes ? '#8954FF' : 'rgba(255, 255, 255, 0.1)'}
-                            color="white"
-                            border="1px solid"
-                            borderColor={selectedDuration === d.minutes ? '#B088FF' : 'rgba(255, 255, 255, 0.2)'}
-                            boxShadow={selectedDuration === d.minutes ? '0 0 14px rgba(137, 84, 255, 0.5)' : 'none'}
-                            onClick={() => {
-                              playSfx('click');
-                              setSelectedDuration(d.minutes);
-                            }}
-                            _hover={{
-                              bg: selectedDuration === d.minutes ? '#8954FF' : 'rgba(255, 255, 255, 0.2)',
-                            }}
-                          >
-                            {d.label}
-                          </Button>
-                        ))}
-                      </HStack>
-                    </Box>
-                  </VStack>
-
+                  {/* Start Exam Button */}
                   <Button
-                    h="52px"
-                    px="32px"
+                    h="46px"
+                    px="28px"
+                    w={{ base: '100%', md: 'auto' }}
+                    minW={{ md: '190px' }}
+                    flex="none"
+                    whiteSpace="nowrap"
                     bg="linear-gradient(103.24deg, #98FD1D 0%, #76db00 100%)"
                     color="#183581"
+                    fontFamily="'Nunito', sans-serif"
                     fontWeight={900}
-                    fontSize="16px"
+                    fontSize="15px"
                     borderRadius="12px"
-                    leftIcon={<FiPlay size={20} />}
+                    leftIcon={<FiPlay size={18} />}
                     onClick={handleStartMockExam}
                     _hover={{ filter: 'brightness(1.1)', transform: 'translateY(-2px)' }}
                     _active={{ transform: 'scale(0.98)' }}
-                    boxShadow="0 6px 20px rgba(152, 253, 29, 0.4)"
+                    boxShadow="0 4px 16px rgba(152, 253, 29, 0.35)"
                   >
                     Bắt đầu thi thử
                   </Button>
