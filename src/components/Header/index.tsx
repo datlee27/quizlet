@@ -73,15 +73,16 @@ export const Header: React.FC<HeaderProps> = ({
     >
       <Flex maxW="1280px" mx="auto" align="center" justify="space-between">
         {/* Left: Back button and Logo */}
-        <HStack spacing="14px" flexShrink={0}>
+        <HStack spacing={{ base: '8px', sm: '12px', md: '14px' }} flexShrink={0}>
           {!isHome && (
             <Button
               h="40px"
-              px="16px"
+              w={{ base: '40px', md: 'auto' }}
+              minW={{ base: '40px', md: 'auto' }}
+              px={{ base: '0', md: '16px' }}
               fontFamily="'Nunito', sans-serif"
               fontSize="14px"
               fontWeight={800}
-              leftIcon={<FiArrowLeft size={16} strokeWidth={2.8} />}
               onClick={handleDefaultBack}
               borderRadius="12px"
               bg="rgba(255, 255, 255, 0.12)"
@@ -92,8 +93,15 @@ export const Header: React.FC<HeaderProps> = ({
                 borderColor: "rgba(255, 255, 255, 0.4)",
               }}
               _active={{ transform: "scale(0.97)" }}
+              aria-label={backText || 'Quay lại'}
+              title={backText || 'Quay lại'}
             >
-              {backText || 'Quay lại'}
+              <HStack spacing="6px" justify="center">
+                <FiArrowLeft size={16} strokeWidth={2.8} />
+                <Text as="span" display={{ base: 'none', md: 'inline' }}>
+                  {backText || 'Quay lại'}
+                </Text>
+              </HStack>
             </Button>
           )}
 
@@ -103,11 +111,11 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={handleGoHome}
             _hover={{ opacity: 0.9 }}
           >
-            <Image src={logo} alt="Quizlet" h={{ base: '32px', md: '38px' }} />
+            <Image src={logo} alt="Quizlet" h={{ base: '30px', md: '38px' }} />
             <Text
               fontFamily="'Nunito', sans-serif"
               fontWeight={900}
-              fontSize={{ base: '18px', md: '22px' }}
+              fontSize={{ base: '17px', md: '22px' }}
               letterSpacing="-0.5px"
               color="white"
             >
@@ -117,16 +125,17 @@ export const Header: React.FC<HeaderProps> = ({
         </HStack>
 
         {/* Right: Actions, Stats, Quick Switcher, Settings */}
-        <HStack spacing={{ base: '8px', md: '14px' }} flexShrink={0}>
+        <HStack spacing={{ base: '8px', md: '12px' }} flexShrink={0}>
           {headerStats && (
             <Badge
+              display={{ base: 'none', md: 'inline-flex' }}
               bg="rgba(159, 115, 255, 0.25)"
               color="#D8C4FF"
               border="1px solid rgba(159, 115, 255, 0.5)"
               px="12px"
               py="6px"
               borderRadius="12px"
-              fontSize={{ base: '11px', md: '13px' }}
+              fontSize="13px"
               fontFamily="'Nunito', sans-serif"
               fontWeight={800}
             >
@@ -139,12 +148,12 @@ export const Header: React.FC<HeaderProps> = ({
               <MenuButton
                 as={Button}
                 h="40px"
-                px="16px"
+                w={{ base: '40px', md: 'auto' }}
+                minW={{ base: '40px', md: 'auto' }}
+                px={{ base: '0', md: '16px' }}
                 fontFamily="'Nunito', sans-serif"
                 fontSize="14px"
                 fontWeight={800}
-                leftIcon={<FiGrid size={16} strokeWidth={2.5} />}
-                rightIcon={<FiChevronDown size={16} strokeWidth={2.8} />}
                 bg="rgba(255, 255, 255, 0.12)"
                 color="white"
                 borderRadius="12px"
@@ -154,9 +163,18 @@ export const Header: React.FC<HeaderProps> = ({
                   borderColor: "rgba(255, 255, 255, 0.4)",
                 }}
                 _active={{ bg: "rgba(255, 255, 255, 0.28)", transform: "scale(0.97)" }}
-                display={{ base: 'none', sm: 'inline-flex' }}
+                aria-label="Đổi môn học"
+                title="Đổi môn học"
               >
-                Đổi môn học
+                <HStack spacing="6px" justify="center">
+                  <FiGrid size={16} strokeWidth={2.5} />
+                  <Text as="span" display={{ base: 'none', md: 'inline' }}>
+                    Đổi môn học
+                  </Text>
+                  <Box as="span" display={{ base: 'none', md: 'inline-flex' }}>
+                    <FiChevronDown size={14} strokeWidth={2.8} />
+                  </Box>
+                </HStack>
               </MenuButton>
               <Portal>
                 <MenuList
