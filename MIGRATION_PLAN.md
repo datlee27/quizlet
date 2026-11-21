@@ -118,24 +118,24 @@ flowchart TD
 ## 🚀 KẾ HOẠCH MIGRATION CHI TIẾT (5 PHASES)
 
 ### Phase 1: Khởi tạo nền tảng & Design System
-- [ ] Khởi tạo dự án React + TypeScript + Vite tại thư mục gốc.
-- [ ] Cài đặt các thư viện lõi tương thích:
+- [x] Khởi tạo dự án React + TypeScript + Vite tại thư mục gốc.
+- [x] Cài đặt các thư viện lõi tương thích:
   - `@chakra-ui/react` (v2), `@emotion/react`, `@emotion/styled`, `framer-motion`
   - `react-icons`, `@chakra-ui/icons`
   - `canvas-confetti` (cho hiệu ứng đạt điểm cao)
-- [ ] Cấu hình `vite.config.ts` (alias `@/`, `@assets/`, `@components/`, `@services/`, `@themes/`).
-- [ ] Sao chép và tổ chức lại assets từ `_reference_ui/src/assets` (hình ảnh, icons SVG, âm thanh).
-- [ ] Thiết lập Chakra UI Theme (`src/themes/theme.ts`) đồng bộ với `_reference_ui` (font Nunito, màu sắc, breakpoints).
-- [ ] Xây dựng `SoundContext` & `SoundManager` hỗ trợ BGM, SFX (click, flip, correct, wrong, timeout, victory).
-- [ ] Tích hợp `SettingsModal` từ `_reference_ui` vào Header chung.
+- [x] Cấu hình `vite.config.ts` (alias `@/`, `@assets/`, `@components/`, `@services/`, `@themes/`).
+- [x] Sao chép và tổ chức lại assets từ `_reference_ui/src/assets` (hình ảnh, icons SVG, âm thanh).
+- [x] Thiết lập Chakra UI Theme (`src/themes/theme.ts`) đồng bộ với `_reference_ui` (font Nunito, màu sắc, breakpoints).
+- [x] Xây dựng `SoundContext` & `SoundManager` hỗ trợ BGM, SFX (click, flip, correct, wrong, timeout, victory).
+- [x] Tích hợp `SettingsModal` từ `_reference_ui` vào Header chung.
 
 ### Phase 2: Xây dựng Tầng Mock Service & Quản Lý Dữ Liệu
-- [ ] Chuẩn hoá 4 file dữ liệu câu hỏi thành TypeScript modules trong `src/data/`:
+- [x] Chuẩn hoá 4 file dữ liệu câu hỏi thành TypeScript modules trong `src/data/`:
   - `mln111.data.ts` (598 câu)
   - `mln122.data.ts` (538 câu)
   - `aet.data.ts` (234 câu)
   - `hod.data.ts` (467 câu)
-- [ ] Thiết kế `src/services/` theo chuẩn Service/Repository Pattern:
+- [x] Thiết kế `src/services/` theo chuẩn Service/Repository Pattern:
   - `quizService.ts`:
     - `getSubjects(): Promise<ISubject[]>`
     - `getSubjectDetail(code): Promise<ISubjectDetail>`
@@ -152,20 +152,20 @@ flowchart TD
     - `saveSettings(settings: ISettings): void`
   - `migrationService.ts`:
     - Tự động nhận diện và chuyển dữ liệu `localStorage` cũ (từ phiên bản HTML thuần) sang cấu trúc mới, đảm bảo người dùng không bị mất tiến độ làm bài cũ.
-- [ ] Viết unit/sanity test cho Service Layer để đảm bảo trả về đúng dữ liệu giả lập.
+- [x] Viết unit/sanity test cho Service Layer để đảm bảo trả về đúng dữ liệu giả lập.
 
 ### Phase 3: Chuyển đổi Giao Diện & Màn Hình Nghiệp Vụ
-- [ ] **Màn hình 1: Danh Sách Môn Học (`SubjectsPage`)**:
+- [x] **Màn hình 1: Danh Sách Môn Học (`SubjectsPage`)**:
   - Giao diện Header với Logo, nút Cài đặt âm thanh (Settings), trạng thái tổng.
   - Lưới 4 Card Môn Học lấy cảm hứng từ `ModeCard` (`card-1` -> `card-4`) của `_reference_ui`.
   - Hiển thị thanh tiến độ, số bộ đề đã học / tổng số đề, số lượng câu hỏi.
-- [ ] **Màn hình 2: Dashboard Môn Học (`SubjectDashboardPage`)**:
+- [x] **Màn hình 2: Dashboard Môn Học (`SubjectDashboardPage`)**:
   - Nút quay lại ("Chọn môn"), chuyển đổi môn nhanh.
   - Tab 1: **Bộ Đề Ôn Tập**: Grid danh sách bộ đề (Bộ đề 1..N), hiển thị tỷ lệ %, điểm số, trạng thái (Chưa học / Đang học / Đã xong), nút Làm bài / Làm lại.
   - Tab 2: **Thi Thử**:
     - Card Tạo đề mới với bộ chọn thời gian: `30 phút (Tryhard)`, `45 phút (Tiêu chuẩn)`, `50 phút (Thoải mái)` (không chứa emoji theo yêu cầu).
     - Danh sách đề thi thử đã làm: Xem lại, Làm lại, Học lại câu sai, Xoá đề thi.
-- [ ] **Màn hình 3: Làm Bài & Flashcard 3D (`QuizPage`)**:
+- [x] **Màn hình 3: Làm Bài & Flashcard 3D (`QuizPage`)**:
   - Header bài thi: Tên bộ đề, đồng hồ đếm ngược (nếu là thi thử, có hiệu ứng đổi màu khi gần hết giờ), số câu hiện tại (`Câu X/50`), thanh Progress bar.
   - Flashcard tương tác 3D:
     - Mặt trước: Câu hỏi, các nút chọn A/B/C/D/E.
@@ -173,7 +173,7 @@ flowchart TD
     - Hỗ trợ câu đa đáp án (`multiAnswer`): Checkbox chọn nhiều đáp án + Nút "Xác nhận câu trả lời".
     - Mặt sau: Nhãn Đúng/Sai, đáp án bạn chọn vs đáp án đúng, giải thích / ghi chú.
   - Nút "Câu tiếp theo" và nút "Nộp bài sớm" (cho thi thử).
-- [ ] **Màn hình 4: Kết Quả & Ôn Tập Chuyên Sâu (`ResultPage`)**:
+- [x] **Màn hình 4: Kết Quả & Ôn Tập Chuyên Sâu (`ResultPage`)**:
   - Biểu đồ điểm tròn SVG với dải màu gradient từ theme `_reference_ui`.
   - Thống kê: Đúng, Sai, Tỷ lệ %, Thời gian làm bài (nếu thi thử).
   - Pháo hoa chúc mừng (`canvas-confetti`) nếu đạt từ 80% điểm trở lên.
@@ -185,22 +185,22 @@ flowchart TD
   - Danh sách Review chi tiết từng câu hỏi bên dưới.
 
 ### Phase 4: Tích hợp Âm Thanh, Hiệu Ứng Chuyển Động & Settings
-- [ ] Gắn SFX vào các hành vi người dùng:
+- [x] Gắn SFX vào các hành vi người dùng:
   - Click chọn đáp án / bấm nút menu.
   - Lật thẻ Flashcard (tiếng flip mềm mại).
   - Trả lời đúng (âm thanh chúc mừng ngắn).
   - Trả lời sai (âm thanh báo lỗi êm tai).
   - Đếm ngược 5 giây cuối (tiếng tick đồng hồ).
   - Hoàn thành bài thi (âm thanh chiến thắng / kết thúc).
-- [ ] Nhạc nền BGM nhẹ nhàng (tùy chỉnh bật/tắt và âm lượng trong Settings).
-- [ ] Đồng bộ Settings với `localStorage` qua `settingsService`.
+- [x] Nhạc nền BGM nhẹ nhàng (tùy chỉnh bật/tắt và âm lượng trong Settings).
+- [x] Đồng bộ Settings với `localStorage` qua `settingsService`.
 
 ### Phase 5: Kiểm Thử Toàn Diện & Chuẩn Bị Deploy Vercel
-- [ ] Kiểm thử toàn diện 100% các luồng người dùng trên cả 4 môn (MLN111, MLN122, AET, HOD).
-- [ ] Kiểm thử responsive trên Mobile, Tablet và Desktop.
-- [ ] Kiểm tra tính toàn vẹn của dữ liệu cũ trong `localStorage` sau migration.
-- [ ] Kiểm tra lệnh build sản phẩm: `npm run build` (không có lỗi TypeScript hay Vite bundler).
-- [ ] Tạo file cấu hình `vercel.json` hỗ trợ Clean URL và SPA Routing.
+- [x] Kiểm thử toàn diện 100% các luồng người dùng trên cả 4 môn (MLN111, MLN122, AET, HOD).
+- [x] Kiểm thử responsive trên Mobile, Tablet và Desktop.
+- [x] Kiểm tra tính toàn vẹn của dữ liệu cũ trong `localStorage` sau migration.
+- [x] Kiểm tra lệnh build sản phẩm: `npm run build` (không có lỗi TypeScript hay Vite bundler).
+- [x] Tạo file cấu hình `vercel.json` hỗ trợ Clean URL và SPA Routing.
 
 ---
 
