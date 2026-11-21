@@ -13,7 +13,7 @@ import {
   Center,
 } from '@chakra-ui/react';
 import { useParams, useNavigate } from 'react-router-dom';
-import confetti from 'canvas-confetti';
+import CelebrationModal, { fireCelebrationConfetti } from '@components/CelebrationModal';
 import { quizService } from '@services/quizService';
 import { progressService } from '@services/progressService';
 import { IQuestion, ISubject, IMockExam, IUserAnswer } from '@interfaces/quiz.interface';
@@ -39,6 +39,7 @@ export const ResultPage: React.FC = () => {
   const [answers, setAnswers] = useState<Record<number, IUserAnswer>>({});
   const [mockData, setMockData] = useState<IMockExam | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isCelebrationOpen, setIsCelebrationOpen] = useState<boolean>(true);
 
   useEffect(() => {
     const loadResult = async () => {
@@ -75,42 +76,10 @@ export const ResultPage: React.FC = () => {
       setAnswers(ansMap);
       setLoading(false);
 
-      // Trigger Celebration Confetti when completing mock exam or scoring >= 80% (Yêu cầu 8)
-      const totalQ = qList.length;
-      const correctCount = Object.values(ansMap).filter((a) => a.correct).length;
-      const pct = totalQ > 0 ? (correctCount / totalQ) * 100 : 0;
-
-      if (isMock || pct >= 80) {
-        // Central celebratory burst
-        confetti({
-          particleCount: 110,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: ['#9F73FF', '#98FD1D', '#FFEE58', '#60B1F3', '#FF4249'],
-        });
-
-        // Left cannon
-        setTimeout(() => {
-          confetti({
-            particleCount: 60,
-            angle: 60,
-            spread: 55,
-            origin: { x: 0.1, y: 0.7 },
-            colors: ['#98FD1D', '#FFEE58', '#9F73FF'],
-          });
-        }, 220);
-
-        // Right cannon
-        setTimeout(() => {
-          confetti({
-            particleCount: 60,
-            angle: 120,
-            spread: 55,
-            origin: { x: 0.9, y: 0.7 },
-            colors: ['#60B1F3', '#98FD1D', '#FF8A8E'],
-          });
-        }, 380);
-      }
+      // Trigger Olympia Celebration Confetti for ALL completed exams/mock tests
+      setIsCelebrationOpen(true);
+      fireCelebrationConfetti();
+      setTimeout(() => fireCelebrationConfetti(), 600);
     };
 
     loadResult();
@@ -187,9 +156,50 @@ export const ResultPage: React.FC = () => {
             <Heading fontSize={{ base: '24px', md: '32px' }} fontWeight={900} color="white" mb="8px">
               {isMock ? 'Kết Quả Thi Thử' : 'Bộ Đề Hoàn Thành'}
             </Heading>
-            <Text color="rgba(255, 255, 255, 0.8)" fontSize="15px">
+            <Text color="rgba(255, 255, 255, 0.8)" fontSize="15px" mb="12px">
               {subtitle}
             </Text>
+            <HStack spacing="10px">
+              <Button
+                size="sm"
+                h="36px"
+                px="16px"
+                bg="linear-gradient(103.24deg, #98FD1D 0%, #76db00 100%)"
+                color="#183581"
+                borderRadius="10px"
+                fontWeight={900}
+                fontSize="13px"
+                fontFamily="'Nunito', sans-serif"
+                onClick={() => {
+                  playSfx('click');
+                  fireCelebrationConfetti();
+                }}
+                _hover={{ filter: 'brightness(1.1)', transform: 'translateY(-1px)' }}
+                _active={{ transform: 'scale(0.98)' }}
+                boxShadow="0 2px 10px rgba(152, 253, 29, 0.35)"
+              >
+                🎉 Bắn pháo giấy
+              </Button>
+              <Button
+                size="sm"
+                h="36px"
+                px="14px"
+                bg="rgba(159, 115, 255, 0.25)"
+                color="#D8C4FF"
+                border="1px solid rgba(159, 115, 255, 0.45)"
+                borderRadius="10px"
+                fontWeight={800}
+                fontSize="13px"
+                fontFamily="'Nunito', sans-serif"
+                onClick={() => {
+                  playSfx('click');
+                  setIsCelebrationOpen(true);
+                }}
+                _hover={{ bg: 'rgba(159, 115, 255, 0.4)', color: 'white' }}
+              >
+                🏆 Xem lại banner chúc mừng
+              </Button>
+            </HStack>
           </Center>
 
           {/* SVG Score Circle */}
@@ -422,6 +432,15 @@ export const ResultPage: React.FC = () => {
           </VStack>
         </Box>
       </Container>
+
+      {/* Olympia Celebration Modal & Confetti Popup */}
+      <CelebrationModal
+        isOpen={isCelebrationOpen}
+        onClose={() => setIsCelebrationOpen(false)}
+        title={isMock ? 'CHÚC MỪNG HOÀN THÀNH ĐỀ THI THỬ' : 'CHÚC MỪNG BẠN HOÀN THÀNH BÀI THI'}
+        scoreText={`Đạt ${correctCount}/${totalQuestions} câu (${pct}%)`}
+        subtitle={`${subject.name} (${subject.code})`}
+      />
     </Box>
   );
 };
