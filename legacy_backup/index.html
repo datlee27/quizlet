@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quizlet — Ôn Tập Trắc Nghiệm: MLN111 • MLN122 • AET • HOD</title>
+  <meta name="description" content="Ôn tập trắc nghiệm và thi thử MLN111, MLN122, AET (Mỹ học), HOD (Lịch sử Thiết kế) - Hơn 1800 câu hỏi">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-content">
+        <button id="btn-back" class="btn-back hidden" aria-label="Quay lại">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          <span id="btn-back-text">Quay lại</span>
+        </button>
+
+        <div class="logo" id="logo-home">
+          <div class="logo-text">
+            <h1>Quizlet</h1>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="btn-switch-subject" class="btn-switch-subject hidden" title="Đổi môn học">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6h16M4 12h16M4 18h7"/>
+            </svg>
+            <span>Đổi môn học</span>
+          </button>
+          <div class="header-stats" id="header-stats"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content">
+      <!-- Subject Selection View (Screen 1) -->
+      <section id="view-subjects" class="view active">
+        <div class="hero">
+          <div class="hero-badge">Hệ thống ôn luyện trắc nghiệm</div>
+          <h2 class="hero-title">Chọn Môn Học</h2>
+        </div>
+
+        <div class="subject-grid">
+          <!-- Subject Card 1: MLN111 -->
+          <div class="subject-card" data-subject="MLN111" role="button" tabindex="0">
+            <div class="subject-card-header">
+              <span class="subject-code">MLN111</span>
+              <span class="subject-tag">Triết học</span>
+            </div>
+            <h3 class="subject-name">Triết học Mác - Lênin</h3>
+            <div class="subject-meta">
+              <span class="meta-item">598 câu hỏi</span>
+              <span class="meta-dot">•</span>
+              <span class="meta-item">12 bộ đề</span>
+            </div>
+            <div class="subject-progress" id="mln111-progress-box">
+              <div class="progress-bar">
+                <div class="progress-fill" id="mln111-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="progress-label" id="mln111-progress-label">Chưa làm bài nào</div>
+            </div>
+            <div class="subject-footer">
+              <span class="btn-subject-action">Bắt đầu học</span>
+            </div>
+          </div>
+
+          <!-- Subject Card 2: MLN122 -->
+          <div class="subject-card" data-subject="MLN122" role="button" tabindex="0">
+            <div class="subject-card-header">
+              <span class="subject-code">MLN122</span>
+              <span class="subject-tag">Kinh tế chính trị</span>
+            </div>
+            <h3 class="subject-name">Kinh tế chính trị Mác - Lênin</h3>
+            <div class="subject-meta">
+              <span class="meta-item">538 câu hỏi</span>
+              <span class="meta-dot">•</span>
+              <span class="meta-item">11 bộ đề</span>
+            </div>
+            <div class="subject-progress" id="mln122-progress-box">
+              <div class="progress-bar">
+                <div class="progress-fill" id="mln122-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="progress-label" id="mln122-progress-label">Chưa làm bài nào</div>
+            </div>
+            <div class="subject-footer">
+              <span class="btn-subject-action">Bắt đầu học</span>
+            </div>
+          </div>
+
+          <!-- Subject Card 3: AET -->
+          <div class="subject-card" data-subject="AET" role="button" tabindex="0">
+            <div class="subject-card-header">
+              <span class="subject-code">AET</span>
+              <span class="subject-tag">Mỹ học</span>
+            </div>
+            <h3 class="subject-name">Aesthetics & Art Theory</h3>
+            <div class="subject-meta">
+              <span class="meta-item">234 câu hỏi</span>
+              <span class="meta-dot">•</span>
+              <span class="meta-item">5 bộ đề</span>
+            </div>
+            <div class="subject-progress" id="aet-progress-box">
+              <div class="progress-bar">
+                <div class="progress-fill" id="aet-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="progress-label" id="aet-progress-label">Chưa làm bài nào</div>
+            </div>
+            <div class="subject-footer">
+              <span class="btn-subject-action">Bắt đầu học</span>
+            </div>
+          </div>
+
+          <!-- Subject Card 4: HOD -->
+          <div class="subject-card" data-subject="HOD" role="button" tabindex="0">
+            <div class="subject-card-header">
+              <span class="subject-code">HOD</span>
+              <span class="subject-tag">Lịch sử Thiết kế</span>
+            </div>
+            <h3 class="subject-name">History of Design</h3>
+            <div class="subject-meta">
+              <span class="meta-item">467 câu hỏi</span>
+              <span class="meta-dot">•</span>
+              <span class="meta-item">10 bộ đề</span>
+            </div>
+            <div class="subject-progress" id="hod-progress-box">
+              <div class="progress-bar">
+                <div class="progress-fill" id="hod-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="progress-label" id="hod-progress-label">Chưa làm bài nào</div>
+            </div>
+            <div class="subject-footer">
+              <span class="btn-subject-action">Bắt đầu học</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Subject Dashboard View (Screen 2: Mock Exam + Exam Grid) -->
+      <section id="view-home" class="view">
+        <div class="subject-dashboard-header">
+          <div class="dashboard-title-group">
+            <span class="dashboard-badge" id="dashboard-subject-code">MLN111</span>
+            <h2 class="dashboard-title" id="dashboard-subject-name">Triết học Mác - Lênin</h2>
+          </div>
+          <p class="dashboard-subtitle" id="dashboard-subject-stats">598 câu hỏi • 12 bộ đề</p>
+        </div>
+
+        <!-- Dashboard Tabs -->
+        <div class="dashboard-tabs-wrapper">
+          <div class="dashboard-tabs">
+            <button class="tab-btn active" data-tab="exams" id="tab-btn-exams">
+              <span>Bộ Đề Ôn Tập</span>
+              <span class="tab-count" id="tab-exam-count">12</span>
+            </button>
+            <button class="tab-btn" data-tab="mock" id="tab-btn-mock">
+              <span>Thi Thử</span>
+              <span class="tab-count" id="tab-mock-count">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab: Bộ Đề Ôn Tập -->
+        <div class="tab-content active" id="tab-content-exams">
+          <div class="exam-grid" id="exam-grid"></div>
+        </div>
+
+        <!-- Tab: Thi Thử -->
+        <div class="tab-content" id="tab-content-mock">
+          <div class="mock-start-card">
+            <div class="mock-start-info">
+              <h3 class="mock-start-title">Tạo Đề Thi Thử Mới</h3>
+              <p class="mock-start-desc">Hệ thống tự động chọn ngẫu nhiên 50 câu hỏi từ toàn bộ ngân hàng câu hỏi của môn này.</p>
+              <div class="mock-duration-picker">
+                <span class="duration-label">Thời gian thi:</span>
+                <div class="duration-options" id="duration-options">
+                  <button type="button" class="btn-duration" data-minutes="30">30 phút (Tryhard)</button>
+                  <button type="button" class="btn-duration active" data-minutes="45">45 phút (Tiêu chuẩn)</button>
+                  <button type="button" class="btn-duration" data-minutes="50">50 phút (Thoải mái)</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-mock-start" id="btn-mock-start">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <span>Bắt đầu thi thử</span>
+            </button>
+          </div>
+
+          <div class="mock-history-header" id="mock-history-header" style="display: none;">
+            <h3 class="section-title">Đề đã thi</h3>
+            <span class="section-count" id="mock-history-count">0 đề</span>
+          </div>
+          <div class="mock-history-grid" id="mock-history-grid"></div>
+        </div>
+      </section>
+
+      <!-- Quiz View (Flashcard Screen) -->
+      <section id="view-quiz" class="view">
+        <div class="quiz-container">
+          <div class="quiz-progress">
+            <div class="progress-info">
+              <span id="quiz-title" class="quiz-title"></span>
+              <div id="quiz-timer" class="quiz-timer hidden" title="Thời gian còn lại">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span id="timer-text">45:00</span>
+              </div>
+              <span id="quiz-counter" class="quiz-counter"></span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="progress-fill"></div>
+            </div>
+          </div>
+
+          <div class="flashcard-wrapper">
+            <div class="flashcard" id="flashcard">
+              <!-- Front -->
+              <div class="flashcard-front" id="card-front">
+                <div class="question-badge" id="question-badge"></div>
+                <div class="question-text" id="question-text"></div>
+                <div class="options-list" id="options-list"></div>
+                <div class="multi-confirm-wrapper hidden" id="multi-confirm-wrapper">
+                  <button class="btn btn-confirm-multi" id="btn-confirm-multi" disabled>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span>Xác nhận câu trả lời (<span id="multi-count">0</span> đã chọn)</span>
+                  </button>
+                </div>
+              </div>
+              <!-- Back -->
+              <div class="flashcard-back" id="card-back">
+                <div class="result-status-badge" id="result-status-badge"></div>
+                <p class="question-text-back" id="question-text-back"></p>
+                <div class="answer-review" id="answer-review"></div>
+                <div class="note-box" id="note-box"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quiz-actions" id="quiz-actions">
+            <button class="btn btn-finish-mock hidden" id="btn-finish-mock" title="Nộp bài và kết thúc thi thử">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
+              <span>Nộp bài sớm</span>
+            </button>
+            <button class="btn btn-next" id="btn-next">
+              <span>Câu tiếp theo</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Result View -->
+      <section id="view-result" class="view">
+        <div class="result-container" id="result-container">
+          <div class="result-card">
+            <div class="result-header">
+              <span class="result-type-tag" id="result-type-tag">Kết quả ôn tập</span>
+              <h2 class="result-title" id="result-title">Bộ đề hoàn thành</h2>
+              <p class="result-subtitle" id="result-subtitle">Đánh giá kết quả làm bài của bạn</p>
+            </div>
+
+            <div class="score-circle-wrapper">
+              <div class="score-circle" id="score-circle">
+                <svg viewBox="0 0 120 120">
+                  <circle class="score-bg" cx="60" cy="60" r="54"/>
+                  <circle class="score-fill" id="score-fill" cx="60" cy="60" r="54"/>
+                </svg>
+                <div class="score-text">
+                  <span class="score-num" id="score-num">0</span>
+                  <span class="score-total" id="score-total">/50</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="result-stats" id="result-stats"></div>
+
+            <div class="result-buttons">
+              <button class="btn btn-review-wrong" id="btn-review-wrong">
+                <span class="status-dot dot-wrong"></span>
+                <span id="btn-review-wrong-text">Học lại câu sai</span>
+              </button>
+              <button class="btn btn-review-correct" id="btn-review-correct">
+                <span class="status-dot dot-correct"></span>
+                <span id="btn-review-correct-text">Ôn lại câu đúng</span>
+              </button>
+              <button class="btn btn-restart" id="btn-restart">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span id="btn-restart-text">Làm lại đề này</span>
+              </button>
+              <button class="btn btn-new-mock hidden" id="btn-new-mock">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span>Tạo đề thi mới</span>
+              </button>
+              <button class="btn btn-home" id="btn-result-home">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                <span>Về danh sách đề</span>
+              </button>
+            </div>
+
+            <div class="review-list" id="review-list"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="questions.js"></script>
+  <script src="data_mln122.js"></script>
+  <script src="data_aet.js"></script>
+  <script src="data_hod.js"></script>
+  <script src="app.js?v=3"></script>
+</body>
+</html>
