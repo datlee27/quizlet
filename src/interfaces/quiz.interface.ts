@@ -48,3 +48,11 @@ export interface IMockExam {
   total: number;
   isCompleted: boolean;
 }
+
+export interface ISettings {
+  enabled: boolean;
+  masterVolume: number; // 0..1
+  sfxVolume: number;    // 0..1
+  bgmVolume: number;    // 0..1
+  bgmPlaying: boolean;
+}

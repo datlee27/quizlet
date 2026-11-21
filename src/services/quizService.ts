@@ -35,6 +35,13 @@ export const quizService = {
   },
 
   /**
+   * Lấy thông tin chi tiết môn học (alias cho getSubject)
+   */
+  async getSubjectDetail(code: string): Promise<ISubject | null> {
+    return this.getSubject(code);
+  },
+
+  /**
    * Lấy toàn bộ câu hỏi của một môn học
    */
   async getSubjectQuestions(code: string): Promise<IQuestion[]> {
