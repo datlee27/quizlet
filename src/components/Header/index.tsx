@@ -73,19 +73,25 @@ export const Header: React.FC<HeaderProps> = ({
     >
       <Flex maxW="1280px" mx="auto" align="center" justify="space-between">
         {/* Left: Back button and Logo */}
-        <HStack spacing="14px">
+        <HStack spacing="14px" flexShrink={0}>
           {!isHome && (
             <Button
-              size="sm"
-              variant="outline"
-              colorScheme="purple"
-              leftIcon={<FiArrowLeft />}
+              h="40px"
+              px="16px"
+              fontFamily="'Nunito', sans-serif"
+              fontSize="14px"
+              fontWeight={800}
+              leftIcon={<FiArrowLeft size={16} strokeWidth={2.8} />}
               onClick={handleDefaultBack}
-              borderRadius="10px"
-              bg="rgba(255, 255, 255, 0.1)"
+              borderRadius="12px"
+              bg="rgba(255, 255, 255, 0.12)"
               color="white"
-              border="1px solid rgba(255, 255, 255, 0.2)"
-              _hover={{ bg: 'rgba(255, 255, 255, 0.2)' }}
+              border="1px solid rgba(255, 255, 255, 0.22)"
+              _hover={{
+                bg: "rgba(255, 255, 255, 0.22)",
+                borderColor: "rgba(255, 255, 255, 0.4)",
+              }}
+              _active={{ transform: "scale(0.97)" }}
             >
               {backText || 'Quay lại'}
             </Button>
@@ -99,6 +105,7 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Image src={logo} alt="Quizlet" h={{ base: '32px', md: '38px' }} />
             <Text
+              fontFamily="'Nunito', sans-serif"
               fontWeight={900}
               fontSize={{ base: '18px', md: '22px' }}
               letterSpacing="-0.5px"
@@ -110,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
         </HStack>
 
         {/* Right: Actions, Stats, Quick Switcher, Settings */}
-        <HStack spacing={{ base: '8px', md: '14px' }}>
+        <HStack spacing={{ base: '8px', md: '14px' }} flexShrink={0}>
           {headerStats && (
             <Badge
               bg="rgba(159, 115, 255, 0.25)"
@@ -120,7 +127,8 @@ export const Header: React.FC<HeaderProps> = ({
               py="6px"
               borderRadius="12px"
               fontSize={{ base: '11px', md: '13px' }}
-              fontWeight={700}
+              fontFamily="'Nunito', sans-serif"
+              fontWeight={800}
             >
               {headerStats}
             </Badge>
@@ -130,16 +138,22 @@ export const Header: React.FC<HeaderProps> = ({
             <Menu>
               <MenuButton
                 as={Button}
-                size="sm"
-                leftIcon={<FiGrid />}
-                rightIcon={<FiChevronDown />}
-                bg="rgba(255, 255, 255, 0.1)"
+                h="40px"
+                px="16px"
+                fontFamily="'Nunito', sans-serif"
+                fontSize="14px"
+                fontWeight={800}
+                leftIcon={<FiGrid size={16} strokeWidth={2.5} />}
+                rightIcon={<FiChevronDown size={16} strokeWidth={2.8} />}
+                bg="rgba(255, 255, 255, 0.12)"
                 color="white"
-                borderRadius="10px"
-                fontSize="13px"
-                fontWeight={700}
-                _hover={{ bg: 'rgba(255, 255, 255, 0.2)' }}
-                _active={{ bg: 'rgba(255, 255, 255, 0.25)' }}
+                borderRadius="12px"
+                border="1px solid rgba(255, 255, 255, 0.22)"
+                _hover={{
+                  bg: "rgba(255, 255, 255, 0.22)",
+                  borderColor: "rgba(255, 255, 255, 0.4)",
+                }}
+                _active={{ bg: "rgba(255, 255, 255, 0.28)", transform: "scale(0.97)" }}
                 display={{ base: 'none', sm: 'inline-flex' }}
               >
                 Đổi môn học
@@ -196,19 +210,23 @@ export const Header: React.FC<HeaderProps> = ({
             </Menu>
           )}
 
-          {/* Settings Button */}
+          {/* Settings Button - Preserves identical square box size (Hình 6 & 7) */}
           <Button
-            size="sm"
             onClick={() => {
               playSfx('click');
               onOpenSettings();
             }}
             bg="#EAEAEA"
             color="#283191"
-            w={{ base: '38px', md: '44px' }}
-            h={{ base: '38px', md: '44px' }}
+            w={{ base: '40px', md: '44px' }}
+            h={{ base: '40px', md: '44px' }}
+            minW={{ base: '40px', md: '44px' }}
+            minH={{ base: '40px', md: '44px' }}
+            maxW={{ base: '40px', md: '44px' }}
+            maxH={{ base: '40px', md: '44px' }}
+            flexShrink={0}
             p={0}
-            borderRadius="10px"
+            borderRadius="12px"
             boxShadow="0px 4px 6px rgba(0, 0, 0, 0.25)"
             _hover={{ bg: '#FFFFFF', transform: 'translateY(-1px)' }}
             _active={{ transform: 'scale(0.96)' }}

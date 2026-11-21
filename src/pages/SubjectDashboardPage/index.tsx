@@ -292,12 +292,14 @@ export const SubjectDashboardPage: React.FC = () => {
                           <>
                             <Button
                               flex={1}
-                              size="sm"
+                              h="38px"
+                              fontFamily="'Nunito', sans-serif"
+                              fontSize="13px"
                               bg="rgba(159, 115, 255, 0.25)"
                               color="white"
                               border="1px solid rgba(159, 115, 255, 0.4)"
-                              borderRadius="8px"
-                              fontWeight={700}
+                              borderRadius="10px"
+                              fontWeight={800}
                               leftIcon={<FiEye />}
                               onClick={() => handleViewResult(examNum)}
                               _hover={{ bg: 'rgba(159, 115, 255, 0.4)' }}
@@ -305,13 +307,18 @@ export const SubjectDashboardPage: React.FC = () => {
                               Xem lại
                             </Button>
                             <Button
-                              size="sm"
-                              variant="outline"
-                              colorScheme="whiteAlpha"
-                              borderRadius="8px"
-                              fontWeight={700}
+                              flex={1}
+                              h="38px"
+                              fontFamily="'Nunito', sans-serif"
+                              fontSize="13px"
+                              bg="rgba(255, 255, 255, 0.12)"
+                              color="white"
+                              border="1px solid rgba(255, 255, 255, 0.25)"
+                              borderRadius="10px"
+                              fontWeight={800}
                               leftIcon={<FiRotateCcw />}
                               onClick={() => handleRestartExam(examNum)}
+                              _hover={{ bg: 'rgba(255, 255, 255, 0.22)' }}
                               title="Làm lại từ đầu"
                             >
                               Làm lại
@@ -320,10 +327,12 @@ export const SubjectDashboardPage: React.FC = () => {
                         ) : (
                           <Button
                             w="100%"
-                            size="sm"
+                            h="38px"
+                            fontFamily="'Nunito', sans-serif"
+                            fontSize="13.5px"
                             bg="linear-gradient(103.24deg, #9F73FF 30.95%, #8954FF 69.05%)"
                             color="white"
-                            borderRadius="8px"
+                            borderRadius="10px"
                             fontWeight={800}
                             leftIcon={<FiPlay />}
                             onClick={() => handleStartExam(examNum)}
@@ -499,11 +508,14 @@ export const SubjectDashboardPage: React.FC = () => {
                           <HStack spacing="10px">
                             <Button
                               flex={1}
-                              size="sm"
+                              h="38px"
+                              fontFamily="'Nunito', sans-serif"
+                              fontSize="13px"
                               bg="rgba(159, 115, 255, 0.25)"
                               color="white"
-                              borderRadius="8px"
-                              fontWeight={700}
+                              border="1px solid rgba(159, 115, 255, 0.4)"
+                              borderRadius="10px"
+                              fontWeight={800}
                               leftIcon={<FiEye />}
                               onClick={() => {
                                 playSfx('click');
@@ -514,29 +526,39 @@ export const SubjectDashboardPage: React.FC = () => {
                               Xem lại
                             </Button>
                             <Button
-                              size="sm"
-                              variant="outline"
-                              colorScheme="whiteAlpha"
-                              borderRadius="8px"
-                              fontWeight={700}
+                              flex={1}
+                              h="38px"
+                              fontFamily="'Nunito', sans-serif"
+                              fontSize="13px"
+                              bg="rgba(255, 255, 255, 0.12)"
+                              color="white"
+                              border="1px solid rgba(255, 255, 255, 0.25)"
+                              borderRadius="10px"
+                              fontWeight={800}
                               leftIcon={<FiRotateCcw />}
                               onClick={() => {
                                 playSfx('click');
                                 navigate(`/quiz/${subject.code}/mock/${mock.id}`);
                               }}
+                              _hover={{ bg: 'rgba(255, 255, 255, 0.22)' }}
                               title="Làm lại đề này"
                             >
                               Làm lại
                             </Button>
                             <Button
-                              size="sm"
-                              variant="ghost"
-                              colorScheme="red"
-                              borderRadius="8px"
+                              w="38px"
+                              h="38px"
+                              flexShrink={0}
+                              p={0}
+                              borderRadius="10px"
+                              bg="rgba(255, 66, 73, 0.15)"
+                              border="1px solid rgba(255, 66, 73, 0.35)"
+                              color="#FF8A8E"
                               onClick={() => handleDeleteMock(mock.id, mock.title)}
+                              _hover={{ bg: 'rgba(255, 66, 73, 0.3)', color: 'white' }}
                               title="Xoá đề"
                             >
-                              <FiTrash2 />
+                              <FiTrash2 size={16} />
                             </Button>
                           </HStack>
                         </Box>

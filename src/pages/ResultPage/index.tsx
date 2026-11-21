@@ -75,16 +75,41 @@ export const ResultPage: React.FC = () => {
       setAnswers(ansMap);
       setLoading(false);
 
-      // Trigger Confetti if score >= 80%
+      // Trigger Celebration Confetti when completing mock exam or scoring >= 80% (Yêu cầu 8)
       const totalQ = qList.length;
       const correctCount = Object.values(ansMap).filter((a) => a.correct).length;
       const pct = totalQ > 0 ? (correctCount / totalQ) * 100 : 0;
-      if (pct >= 80) {
+
+      if (isMock || pct >= 80) {
+        // Central celebratory burst
         confetti({
-          particleCount: 100,
-          spread: 70,
+          particleCount: 110,
+          spread: 80,
           origin: { y: 0.6 },
+          colors: ['#9F73FF', '#98FD1D', '#FFEE58', '#60B1F3', '#FF4249'],
         });
+
+        // Left cannon
+        setTimeout(() => {
+          confetti({
+            particleCount: 60,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0.1, y: 0.7 },
+            colors: ['#98FD1D', '#FFEE58', '#9F73FF'],
+          });
+        }, 220);
+
+        // Right cannon
+        setTimeout(() => {
+          confetti({
+            particleCount: 60,
+            angle: 120,
+            spread: 55,
+            origin: { x: 0.9, y: 0.7 },
+            colors: ['#60B1F3', '#98FD1D', '#FF8A8E'],
+          });
+        }, 380);
       }
     };
 

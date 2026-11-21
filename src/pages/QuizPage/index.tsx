@@ -45,6 +45,14 @@ export const QuizPage: React.FC = () => {
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
   const [mockExamData, setMockExamData] = useState<IMockExam | null>(null);
+  const [cardMinHeight, setCardMinHeight] = useState<number>(440);
+
+  const frontRef = useRef<HTMLDivElement>(null);
+  const backRef = useRef<HTMLDivElement>(null);
+  const frontInnerRef = useRef<HTMLDivElement>(null);
+  const backInnerRef = useRef<HTMLDivElement>(null);
+
+  const currentQuestion = questions[currentIndex];
 
   // Timer state for Mock Exam
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
@@ -145,6 +153,32 @@ export const QuizPage: React.FC = () => {
     initQuiz();
   }, [code, examNumber, mockId, isMock, mode, isFresh, navigate, toast]);
 
+  // Dynamically calculate and adjust card height to wrap all options without overflow
+  useEffect(() => {
+    const updateCardHeight = () => {
+      const fh = frontInnerRef.current?.offsetHeight || frontRef.current?.scrollHeight || 0;
+      const bh = backInnerRef.current?.offsetHeight || backRef.current?.scrollHeight || 0;
+      const pad = window.innerWidth >= 768 ? 76 : 56;
+      const needed = Math.max(fh, bh) + pad + 20;
+      setCardMinHeight(Math.max(needed, 420));
+    };
+
+    updateCardHeight();
+    const timer = setTimeout(updateCardHeight, 50);
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => updateCardHeight());
+      if (frontInnerRef.current) ro.observe(frontInnerRef.current);
+      if (backInnerRef.current) ro.observe(backInnerRef.current);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      if (ro) ro.disconnect();
+    };
+  }, [currentIndex, currentQuestion, isFlipped, selectedMulti]);
+
   // Finish exam function
   const handleFinishExam = useCallback(
     async (autoSubmit = false) => {
@@ -200,8 +234,6 @@ export const QuizPage: React.FC = () => {
       }
     };
   }, [isMock, timerTotal, handleFinishExam, playSfx]);
-
-  const currentQuestion = questions[currentIndex];
 
   // Handle single choice option select
   const handleSelectOption = (letter: string) => {
@@ -413,15 +445,17 @@ export const QuizPage: React.FC = () => {
         {/* 3D Flashcard Container */}
         <Box
           w="100%"
-          minH="420px"
+          minH={`${cardMinHeight}px`}
+          height={`${cardMinHeight}px`}
           position="relative"
           sx={{ perspective: '1200px' }}
-          mb="24px"
+          mb="28px"
+          transition="min-height 0.25s ease, height 0.25s ease"
         >
           <Box
             w="100%"
             h="100%"
-            minH="420px"
+            minH={`${cardMinHeight}px`}
             position="relative"
             transition="transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)"
             transform={isFlipped ? 'rotateY(180deg)' : 'none'}
@@ -429,8 +463,10 @@ export const QuizPage: React.FC = () => {
           >
             {/* FRONT FACE */}
             <Box
+              ref={frontRef}
               position="absolute"
               inset={0}
+              minH="100%"
               bg="rgba(40, 49, 145, 0.92)"
               backdropFilter="blur(20px)"
               border="1px solid rgba(255, 255, 255, 0.22)"
@@ -440,21 +476,23 @@ export const QuizPage: React.FC = () => {
               flexDirection="column"
               boxShadow="0 18px 45px rgba(0, 0, 0, 0.4)"
               sx={{ backfaceVisibility: 'hidden' }}
+              overflowY="auto"
             >
-              <Badge
-                alignSelf="flex-start"
-                bg="rgba(159, 115, 255, 0.25)"
-                color="#FFEE58"
-                border="1px solid rgba(159, 115, 255, 0.4)"
-                px="12px"
-                py="4px"
-                borderRadius="8px"
-                fontSize="13px"
-                fontWeight={800}
-                mb="16px"
-              >
-                Câu {currentIndex + 1} {isMulti ? '(Chọn nhiều đáp án)' : ''}
-              </Badge>
+              <Box ref={frontInnerRef} w="100%">
+                <Badge
+                  alignSelf="flex-start"
+                  bg="rgba(159, 115, 255, 0.25)"
+                  color="#FFEE58"
+                  border="1px solid rgba(159, 115, 255, 0.4)"
+                  px="12px"
+                  py="4px"
+                  borderRadius="8px"
+                  fontSize="13px"
+                  fontWeight={800}
+                  mb="16px"
+                >
+                  Câu {currentIndex + 1} {isMulti ? '(Chọn nhiều đáp án)' : ''}
+                </Badge>
 
               <Text
                 fontSize={{ base: '17px', md: '20px' }}
@@ -549,30 +587,37 @@ export const QuizPage: React.FC = () => {
                 })}
               </VStack>
 
-              {/* Multi Confirm Button */}
-              {isMulti && (
+              {/* Multi Confirm Button inside card */}
+              {isMulti && !isAnswered && (
                 <Button
                   mt="20px"
                   h="48px"
                   bg="linear-gradient(103.24deg, #98FD1D 0%, #76db00 100%)"
                   color="#183581"
+                  fontFamily="'Nunito', sans-serif"
                   fontWeight={900}
                   fontSize="15px"
-                  borderRadius="10px"
-                  isDisabled={selectedMulti.length === 0 || isAnswered}
+                  borderRadius="12px"
+                  isDisabled={selectedMulti.length === 0}
                   onClick={handleSubmitMultiAnswer}
-                  leftIcon={<FiCheck size={18} />}
+                  leftIcon={<FiCheck size={18} strokeWidth={3} />}
                   _hover={{ filter: 'brightness(1.1)' }}
+                  boxShadow="0 4px 14px rgba(152, 253, 29, 0.4)"
                 >
-                  Xác nhận câu trả lời ({selectedMulti.length} đã chọn)
+                  {selectedMulti.length > 0
+                    ? `Xác nhận đáp án (${selectedMulti.length} đã chọn)`
+                    : 'Hãy tích chọn ít nhất 1 đáp án'}
                 </Button>
               )}
+              </Box>
             </Box>
 
             {/* BACK FACE (REVEAL ANSWER) */}
             <Box
+              ref={backRef}
               position="absolute"
               inset={0}
+              minH="100%"
               bg="rgba(30, 38, 120, 0.95)"
               backdropFilter="blur(20px)"
               border="2px solid"
@@ -586,7 +631,8 @@ export const QuizPage: React.FC = () => {
               sx={{ backfaceVisibility: 'hidden' }}
               overflowY="auto"
             >
-              {/* Result Status Badge */}
+              <Box ref={backInnerRef} w="100%">
+                {/* Result Status Badge */}
               <Flex align="center" gap="10px" mb="16px">
                 {currentAnswerRecord?.correct ? (
                   <Badge
@@ -627,7 +673,7 @@ export const QuizPage: React.FC = () => {
                 {currentQuestion.question}
               </Text>
 
-              {/* Options Review with highlighting */}
+              {/* Options Review with highlighting & slightly rounded badges (Hình 1) */}
               <VStack spacing="10px" align="stretch" mb="16px" flex={1}>
                 {currentQuestion.options.map((opt, idx) => {
                   const letterMatch = opt.match(/^([A-E])\.\s*(.*)$/);
@@ -646,18 +692,46 @@ export const QuizPage: React.FC = () => {
                   if (isCorrectAnswer) {
                     optBg = 'rgba(152, 253, 29, 0.2)';
                     optBorder = '#98FD1D';
-                    statusTag = <Badge bg="#98FD1D" color="#183581" fontSize="11px" fontWeight={800}>Đáp án đúng</Badge>;
+                    statusTag = (
+                      <Badge
+                        bg="#98FD1D"
+                        color="#183581"
+                        fontSize="11.5px"
+                        fontFamily="'Nunito', sans-serif"
+                        fontWeight={900}
+                        px="10px"
+                        py="4px"
+                        borderRadius="8px"
+                        letterSpacing="0.3px"
+                      >
+                        ĐÁP ÁN ĐÚNG
+                      </Badge>
+                    );
                   } else if (isUserChoice && !isCorrectAnswer) {
                     optBg = 'rgba(255, 66, 73, 0.2)';
                     optBorder = '#FF4249';
-                    statusTag = <Badge bg="#FF4249" color="white" fontSize="11px" fontWeight={800}>Bạn đã chọn</Badge>;
+                    statusTag = (
+                      <Badge
+                        bg="#FF4249"
+                        color="white"
+                        fontSize="11.5px"
+                        fontFamily="'Nunito', sans-serif"
+                        fontWeight={900}
+                        px="10px"
+                        py="4px"
+                        borderRadius="8px"
+                        letterSpacing="0.3px"
+                      >
+                        BẠN ĐÃ CHỌN
+                      </Badge>
+                    );
                   }
 
                   return (
                     <Box
                       key={letter}
                       p="12px 16px"
-                      borderRadius="10px"
+                      borderRadius="12px"
                       bg={optBg}
                       border="1px solid"
                       borderColor={optBorder}
@@ -687,18 +761,20 @@ export const QuizPage: React.FC = () => {
                   </Text>
                 </Box>
               )}
+              </Box>
             </Box>
           </Box>
         </Box>
 
-        {/* Bottom Actions */}
+        {/* Bottom Actions - Responsive & Multi-answer friendly (Hình 10) */}
         <Flex justify="space-between" align="center" gap="14px">
           {isMock ? (
             <Button
               variant="outline"
               colorScheme="red"
-              borderRadius="10px"
-              fontWeight={700}
+              borderRadius="12px"
+              fontFamily="'Nunito', sans-serif"
+              fontWeight={800}
               fontSize="14px"
               onClick={handleEarlySubmit}
               bg="rgba(239, 68, 68, 0.15)"
@@ -712,21 +788,46 @@ export const QuizPage: React.FC = () => {
             <Box />
           )}
 
-          <Button
-            h="48px"
-            px="28px"
-            bg="linear-gradient(103.24deg, #9F73FF 30.95%, #8954FF 69.05%)"
-            color="white"
-            borderRadius="10px"
-            fontWeight={800}
-            fontSize="15px"
-            rightIcon={<FiArrowRight />}
-            isDisabled={!isAnswered}
-            onClick={handleNextQuestion}
-            _hover={{ filter: 'brightness(1.1)' }}
-          >
-            {currentIndex + 1 === questions.length ? 'Hoàn thành đề' : 'Câu tiếp theo'}
-          </Button>
+          {isMulti && !isAnswered ? (
+            <Button
+              h="48px"
+              px="28px"
+              bg="linear-gradient(103.24deg, #98FD1D 0%, #76db00 100%)"
+              color="#183581"
+              borderRadius="12px"
+              fontFamily="'Nunito', sans-serif"
+              fontWeight={900}
+              fontSize="15px"
+              leftIcon={<FiCheck size={18} strokeWidth={3} />}
+              isDisabled={selectedMulti.length === 0}
+              onClick={handleSubmitMultiAnswer}
+              _hover={{ filter: 'brightness(1.1)', transform: 'translateY(-1px)' }}
+              _active={{ transform: 'scale(0.98)' }}
+              boxShadow="0 4px 14px rgba(152, 253, 29, 0.4)"
+            >
+              {selectedMulti.length > 0
+                ? `Xác nhận đáp án (${selectedMulti.length} đã chọn)`
+                : 'Hãy chọn đáp án'}
+            </Button>
+          ) : (
+            <Button
+              h="48px"
+              px="28px"
+              bg="linear-gradient(103.24deg, #9F73FF 30.95%, #8954FF 69.05%)"
+              color="white"
+              borderRadius="12px"
+              fontFamily="'Nunito', sans-serif"
+              fontWeight={900}
+              fontSize="15px"
+              rightIcon={<FiArrowRight size={18} />}
+              isDisabled={!isAnswered}
+              onClick={handleNextQuestion}
+              _hover={{ filter: 'brightness(1.1)', transform: 'translateY(-1px)' }}
+              _active={{ transform: 'scale(0.98)' }}
+            >
+              {currentIndex + 1 === questions.length ? 'Hoàn thành đề' : 'Câu tiếp theo'}
+            </Button>
+          )}
         </Flex>
       </Container>
     </Box>

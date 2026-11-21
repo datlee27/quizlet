@@ -130,20 +130,19 @@ const components = {
         color?: string;
         borderColor?: string;
       }) => ({
-        ...ButtonStyle,
-        width: props.width || ButtonStyle.width,
-        height: props.height || ButtonStyle.height,
-        bg: "white",
-        color: `brand.${props.colorScheme}`,
-        border: `1px solid brand.${props.colorScheme}`,
-        transition: "all 0.3s ease-in-out",
+        fontFamily: `"Nunito", sans-serif`,
+        fontWeight: "700",
+        bg: "transparent",
+        color: "white",
+        border: "1px solid rgba(255, 255, 255, 0.25)",
+        transition: "all 0.2s ease-in-out",
         _active: {
-          transform: "scale(.9)",
+          transform: "scale(.96)",
         },
         _hover: {
           color: "white",
-          bg: `brand.${props.colorScheme}`,
-          border: `1px solid brand.${props.colorScheme}`,
+          bg: "rgba(255, 255, 255, 0.15)",
+          borderColor: "rgba(255, 255, 255, 0.45)",
         },
       }),
       // Custom variants for specific use cases

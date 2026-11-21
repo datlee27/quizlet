@@ -166,18 +166,6 @@ export const SubjectsPage: React.FC = () => {
                       {sub.name}
                     </Heading>
                   </Stack>
-
-                  {sub.coverImage && (
-                    <Image
-                      src={sub.coverImage}
-                      alt={sub.code}
-                      w="56px"
-                      h="56px"
-                      objectFit="contain"
-                      borderRadius="12px"
-                      display={{ base: 'none', sm: 'block' }}
-                    />
-                  )}
                 </Flex>
 
                 <Flex align="center" gap="12px" color="rgba(255, 255, 255, 0.75)" fontSize="13.5px" mb="20px">
