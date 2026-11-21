@@ -5,7 +5,29 @@ const config = {
   useSystemColorMode: false,
 };
 
-const styles = {};
+const styles = {
+  global: {
+    "*": {
+      scrollbarWidth: "none !important",
+      msOverflowStyle: "none !important",
+      "&::-webkit-scrollbar": {
+        display: "none !important",
+        width: "0px !important",
+        height: "0px !important",
+        background: "transparent !important",
+      },
+    },
+    "html, body, #root": {
+      scrollbarWidth: "none !important",
+      msOverflowStyle: "none !important",
+      "&::-webkit-scrollbar": {
+        display: "none !important",
+        width: "0px !important",
+        height: "0px !important",
+      },
+    },
+  },
+};
 
 const customTheme = extendTheme({
   breakpoints: {
