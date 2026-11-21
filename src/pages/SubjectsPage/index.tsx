@@ -20,6 +20,7 @@ import { ISubject } from '@interfaces/quiz.interface';
 import { useSound } from '@contexts/sound-context';
 import bgMain from '@assets/images/bg-main.png';
 import { FiBookOpen } from 'react-icons/fi';
+import { motion } from 'framer-motion';
 
 export const SubjectsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -101,28 +102,33 @@ export const SubjectsPage: React.FC = () => {
 
         {/* Subjects Grid */}
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: '20px', md: '28px' }}>
-          {subjects.map((sub) => {
+          {subjects.map((sub, idx) => {
             const p = progressMap[sub.code] || { completed: 0, total: sub.totalExams, pct: 0 };
             return (
-              <Box
+              <motion.div
                 key={sub.code}
-                bg="rgba(40, 49, 145, 0.75)"
-                backdropFilter="blur(16px)"
-                border="1px solid rgba(255, 255, 255, 0.18)"
-                borderRadius="20px"
-                p={{ base: '24px', md: '28px' }}
-                cursor="pointer"
-                position="relative"
-                overflow="hidden"
-                transition="all 0.25s ease"
-                onClick={() => handleSelectSubject(sub.code)}
-                _hover={{
-                  transform: 'translateY(-6px)',
-                  boxShadow: '0 16px 36px rgba(0, 0, 0, 0.4)',
-                  borderColor: 'rgba(159, 115, 255, 0.6)',
-                  bg: 'rgba(40, 49, 145, 0.9)',
-                }}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: idx * 0.08 }}
               >
+                <Box
+                  bg="rgba(40, 49, 145, 0.75)"
+                  backdropFilter="blur(16px)"
+                  border="1px solid rgba(255, 255, 255, 0.18)"
+                  borderRadius="20px"
+                  p={{ base: '24px', md: '28px' }}
+                  cursor="pointer"
+                  position="relative"
+                  overflow="hidden"
+                  transition="all 0.25s ease"
+                  onClick={() => handleSelectSubject(sub.code)}
+                  _hover={{
+                    transform: 'translateY(-6px)',
+                    boxShadow: '0 16px 36px rgba(0, 0, 0, 0.4)',
+                    borderColor: 'rgba(159, 115, 255, 0.6)',
+                    bg: 'rgba(40, 49, 145, 0.9)',
+                  }}
+                >
                 {/* Top decorative gradient line */}
                 <Box
                   position="absolute"
@@ -218,7 +224,8 @@ export const SubjectsPage: React.FC = () => {
                   Bắt đầu học môn này
                 </Button>
               </Box>
-            );
+            </motion.div>
+          );
           })}
         </SimpleGrid>
       </Container>

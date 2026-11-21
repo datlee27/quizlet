@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { settingsService } from '@services/settingsService';
 
 export type SfxType = 'click' | 'flip' | 'correct' | 'wrong' | 'tick' | 'complete';
 
@@ -20,8 +21,6 @@ interface ISoundContextType {
   isBgmPlaying: boolean;
 }
 
-const STORAGE_KEY = 'quizlet_sound_settings_v1';
-
 const defaultSettings: ISoundSettings = {
   masterVolume: 80,
   musicVolume: 50,
@@ -32,24 +31,37 @@ const defaultSettings: ISoundSettings = {
 const SoundContext = createContext<ISoundContextType | undefined>(undefined);
 
 export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [settings, setSettings] = useState<ISoundSettings>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return { ...defaultSettings, ...JSON.parse(saved) };
-    } catch {}
-    return defaultSettings;
-  });
-
+  const [settings, setSettings] = useState<ISoundSettings>(defaultSettings);
   const [isBgmPlaying, setIsBgmPlaying] = useState<boolean>(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const bgmOscillatorsRef = useRef<{ stop: () => void } | null>(null);
 
-  // Save settings to localStorage on change
+  // Load initial settings via settingsService
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    } catch {}
-  }, [settings]);
+    const initSettings = async () => {
+      try {
+        const stored = await settingsService.getSettings();
+        setSettings({
+          masterVolume: Math.round(stored.masterVolume * 100),
+          sfxVolume: Math.round(stored.sfxVolume * 100),
+          musicVolume: Math.round(stored.bgmVolume * 100),
+          isMuted: !stored.enabled,
+        });
+      } catch {}
+    };
+    initSettings();
+  }, []);
+
+  // Sync settings to service whenever state changes
+  useEffect(() => {
+    settingsService.saveSettings({
+      enabled: !settings.isMuted,
+      masterVolume: settings.masterVolume / 100,
+      sfxVolume: settings.sfxVolume / 100,
+      bgmVolume: settings.musicVolume / 100,
+      bgmPlaying: isBgmPlaying,
+    });
+  }, [settings, isBgmPlaying]);
 
   // Init AudioContext on user interaction
   const getAudioContext = useCallback(() => {
@@ -73,7 +85,7 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return (settings.masterVolume / 100) * (settings.musicVolume / 100);
   }, [settings]);
 
-  // Web Audio Sound Synthesizer (Zero-latency & Zero-dependency)
+  // Web Audio Sound Synthesizer (Zero-latency & Zero external sound file dependency)
   const playSfx = useCallback((type: SfxType) => {
     const volume = getEffectiveSfxVolume();
     if (volume <= 0) return;
@@ -167,7 +179,7 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {}
   }, [getEffectiveSfxVolume, getAudioContext]);
 
-  // Gentle Ambient BGM Synthesizer (calm background music loop)
+  // Gentle Ambient BGM Synthesizer (calm background music chord progression)
   const startBgm = useCallback(() => {
     try {
       const ctx = getAudioContext();
